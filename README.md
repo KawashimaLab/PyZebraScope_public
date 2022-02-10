@@ -9,11 +9,17 @@ A list of hardware that we used to develop PyZebrascope is described in detail i
 PyZebrascope requires the preinstallation of μManager (https://micro-manager.org/) and DAQmx driver from National Instruments (https://www.ni.com/en-il/support/downloads/drivers/download.ni-daqmx.html) for camera control and analog/digital outputs, respectively. In addition, it is necessary to install the below Python features:
 
 Anaconda package (https://anaconda.org/anaconda/python)
+
 PyQt5 (https://pypi.org/project/PyQt5/)
+
 pyqtgraph (https://www.pyqtgraph.org/)
+
 pymmcore (https://github.com/micro-manager/pymmcore)
+
 ni-daqmx for Python (https://nidaqmx-python.readthedocs.io/)
+
 h5py (https://www.h5py.org/)
+
 CuPy (https://cupy.dev/)
 
 

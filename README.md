@@ -2,7 +2,7 @@ This is a repository for PyZebrascope, an open-source Python platform for brain-
 
 Light-sheet microscopy for whole-brain neural activity imaging in zebrafish requires specific features not available in commercially distributed microscopes. Such features include scanning of two orthogonal excitation beams and eye damage prevention. These particular requirements and the overwhelming number of device parameters that the users need to manipulate during experiments were the main bottlenecks of performing experiments and disseminating/developing technology. We developed PyZebrascope to address this issue by taking advantage of other open-source microscopy projects such as μManager and additional modules for device control, image processing, and machine learning.
 
-
+![PyZebrascope_structure](https://user-images.githubusercontent.com/61713599/153410661-dba6a690-caa8-4bfd-ae97-e86001c326c8.png)
 
 A list of hardware that we used to develop PyZebrascope is described in detail in our manuscript (Barbara, Kantharaju et al, link).
 

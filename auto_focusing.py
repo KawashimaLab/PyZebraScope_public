@@ -1,6 +1,3 @@
-import matplotlib
-matplotlib.rcParams['pdf.fonttype'] = 42 # important for vector text output
-matplotlib.rcParams['ps.fonttype'] = 42  # important for vector text output
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,7 +6,6 @@ from scipy.optimize import minimize
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import QThread, QObject
 from PyQt5.QtWidgets import QWidget,QGridLayout
-import h5py
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from scipy.interpolate import interp1d
@@ -19,6 +15,8 @@ import cupyx.scipy.ndimage as ndigpu
 
 # from scipy.fft import fft2, fftshift
 # from skimage.transform import warp_polar
+
+
 
 class auto_focus_win(QtCore.QThread):
     
@@ -232,8 +230,6 @@ class Auto_focusing(QObject):
         self.axes1.plot([result.x[1]-20,result.x[1]-20],[0,1],'r:')
         self.axes1.set_ylabel('Resolution measure')
         self.axes1.set_xlabel('Searched plane (μm)')
-        
-        #print(result.x)
         
         return int(result.x[1])
         

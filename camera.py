@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 from PyQt5 import QtWidgets, QtTest, uic,QtTest
 from PyQt5.QtCore import QThread, QObject,QEventLoop
@@ -26,7 +25,6 @@ class Cam_GUI(QtWidgets.QMainWindow):
 
 class Reader(QObject):
 
-#Later reader will get readings by the trigger signal#
   
     def __init__(self, parent=None, mmc=None, app=None, qrec=None, qview=None):
         QObject.__init__(self)

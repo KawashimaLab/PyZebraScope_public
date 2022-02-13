@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Feb 17 14:48:17 2020
-
-@author: admin
-"""
-
-''' Stages ''' 
 
 from serial import Serial
 import time

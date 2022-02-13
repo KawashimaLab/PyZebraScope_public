@@ -1,6 +1,4 @@
-﻿# -*- coding: utf-8 -*-
-
-
+﻿
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import QThread, QObject
 from PyQt5.QtWidgets import QMessageBox

@@ -1,20 +1,10 @@
-# -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'camwindow.ui'
-#
-# Created by: PyQt5 UI code generator 5.9.2
-#
-# WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtWidgets import QWidget,QGridLayout
 import pyqtgraph as pg
 import numpy as np
 
-
-#import sys
-#sys.path.append('C:\\Program Files\\Micro-Manager-2.0beta')
-#import MMCorePy
 class CamView_Event(pg.ImageView):
     
 

@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Mar 21 16:19:07 2020
-
-@author: ranib
-"""
-
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Mar 19 10:43:33 2020
-
-@author: ranib
-"""
 
 from datetime import datetime
 from PyQt5 import QtWidgets, QtTest

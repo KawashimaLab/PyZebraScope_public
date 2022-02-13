@@ -1,15 +1,12 @@
-# -*- coding: utf-8 -*-
+
 
 from PyQt5 import QtWidgets, QtTest, uic
 from PyQt5.QtCore import QThread, QObject
 from PyQt5.QtWidgets import QMessageBox
 
-import pymmcore
 import sys
-from queue import Queue
 import numpy as np
 import os
-import h5py
 import time
 from serial import Serial
 

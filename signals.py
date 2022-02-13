@@ -1,23 +1,7 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Mar 21 16:19:07 2020
-
-@author: ranib
-"""
-
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Mar 19 10:43:33 2020
-
-@author: ranib
-"""
 
 from PyQt5 import QtWidgets, QtTest
 import numpy as np
 
-import matplotlib
-matplotlib.rcParams['pdf.fonttype'] = 42 # important for vector text output
-matplotlib.rcParams['ps.fonttype'] = 42  # important for vector text output
 
 from matplotlib import pyplot as plt
 from scipy.ndimage import gaussian_filter1d

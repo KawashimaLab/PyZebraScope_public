@@ -10,7 +10,7 @@ PyZebrascope is a high-level interface designed for neural activity imaging expe
 
 A list of hardware that we used to develop PyZebrascope is described in detail in our manuscript (Barbara, Kantharaju et al, link).
 
-# Installation requirements
+### Installation requirements
 
 PyZebrascope requires the preinstallation of following hardware drivers and low-level interfaces:
 

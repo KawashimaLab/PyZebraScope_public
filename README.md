@@ -9,7 +9,7 @@ A list of hardware that we used to develop PyZebrascope is described in detail i
 PyZebrascope requires the preinstallation of following hardware drivers and low-level interfaces:
 
 - Hardware drivers from manufacturers for miscellaneous devices including cameras
-- DAQmx driver from National Instruments (https://www.ni.com/en-il/support/downloads/drivers/download.ni-daqmx.html
+- DAQmx driver from National Instruments (https://www.ni.com/en-il/support/downloads/drivers/download.ni-daqmx.html)
 - μManager (https://micro-manager.org/) for camera interface
 - CUDA toolkit (https://developer.nvidia.com/cuda-toolkit) for fast autofocusing based on nVidia GPU
 

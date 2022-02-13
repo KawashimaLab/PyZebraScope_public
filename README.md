@@ -8,6 +8,8 @@ PyZebrascope is a high-level interface designed for neural activity imaging expe
 
 A list of hardware that we used to develop PyZebrascope is described in detail in our manuscript (Barbara, Kantharaju et al, link).
 
+## Installation requirements
+
 PyZebrascope requires the preinstallation of following hardware drivers and low-level interfaces:
 
 - Hardware drivers from manufacturers for miscellaneous devices including cameras
@@ -24,6 +26,8 @@ The below Python packages are required to run PyZebrascope
 - ni-daqmx for Python (https://nidaqmx-python.readthedocs.io/)
 - h5py (https://www.h5py.org/)
 - CuPy (https://cupy.dev/, need to match its version with CUDA toolkit)
+
+Note that nVidia GPU board, CUDA toolkit and CuPy are only necessary for speeding up the computation time for the autofocusing feature. We still left CPU-basec codes in auto_focusing.py
 
 
 

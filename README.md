@@ -15,7 +15,7 @@ PyZebrascope requires the preinstallation of following hardware drivers and low-
 - μManager (https://micro-manager.org/) for camera interface
 - CUDA toolkit (https://developer.nvidia.com/cuda-toolkit) for fast autofocusing based on nVidia GPU
 
-Then, it is necessary to install the below Python packages
+The below Python packages are required to run PyZebrascope
 
 - Anaconda package (https://anaconda.org/anaconda/python)
 - PyQt5 (https://pypi.org/project/PyQt5/)

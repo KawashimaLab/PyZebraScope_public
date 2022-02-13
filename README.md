@@ -16,7 +16,7 @@ PyZebrascope requires the preinstallation of μManager (https://micro-manager.or
 - h5py (https://www.h5py.org/)
 
 
-Installation of CUDA toolkit (https://developer.nvidia.com/cuda-toolkit) and below Python package is necessary for fast autofocusing based on GPU, although we still left CPU-based code in auto_focusing.py
+Installation of CUDA toolkit (https://developer.nvidia.com/cuda-toolkit) and below Python package is necessary to enable fast autofocusing based on GPU, although we still left CPU-based code in auto_focusing.py
 
 - CuPy (https://cupy.dev/, need to match version with CUDA toolkit)
 

@@ -186,32 +186,16 @@ class Scanning(QObject):
             if self.scan_mode==1:
                 QtTest.QTest.qWait(500)
                 self.stopScanning()
-        
-            
+                
+                
+                
     def stopScanning(self):        
         
-        self.mainWindow.signal_on=False
-        self.mainWindow.signalthread.quit()
-        self.mainWindow.signalthread.wait()
-        
-        
-        self.mainWindow.signals.finishing_trigger()
-        
-        self.sync_event=True    
-    
         for cam in range(2):
             if self.mainWindow.cam_on_list[cam]:
                 self.mainWindow.cam_list[cam].stopScanning()     
-            
-        if any(x for x in self.mainWindow.cam_on_list):
-            while self.sync_event:                    
-                QtTest.QTest.qWait(50)                        
-        else:
-            self.sync_event=False       
-            
-        # ending signal        
-                
-        self.mainWindow.signals.stop_finishing_trigger()
+        
+        self.secure_stop()
         
         self.mainWindow.scan_btn.setText("Test Scan")   
         self.mainWindow.scan_btn.clicked.disconnect()
@@ -317,18 +301,8 @@ class Scanning(QObject):
             if self.mainWindow.cam_on_list[cam]:
                 self.mainWindow.cam_list[cam].stopRecording()      
 
-        if any(x for x in self.mainWindow.cam_on_list):
-            while self.sync_event:                    
-                QtTest.QTest.qWait(50)                        
-        else:
-            self.sync_event=False       
-            
-        # ending signal        
+        self.secure_stop()      
         
-        self.mainWindow.signal_on=False
-        self.mainWindow.signalthread.quit()
-        self.mainWindow.signalthread.wait()            
-
 
         for i in range(len(self.mainWindow.signals.signal_parameter_box_list)):
             if i != 2: # exclude interval button
@@ -345,6 +319,25 @@ class Scanning(QObject):
         self.mainWindow.rec_btn.clicked.disconnect()
         self.mainWindow.rec_btn.clicked.connect(self.startRecording)
                 
+    def secure_stop(self):
+        
+        # a function for preventing camera hangover by sending stop signals
+        
+        self.mainWindow.signal_on=False
+        self.mainWindow.signalthread.quit()
+        self.mainWindow.signalthread.wait()
+        
+        self.mainWindow.signals.finishing_trigger()        
+        
+        if any(x for x in self.mainWindow.cam_on_list):
+            while self.sync_event:                    
+                QtTest.QTest.qWait(50)                        
+        else:
+            self.sync_event=False       
+            
+        # ending signal        
+                
+        self.mainWindow.signals.stop_finishing_trigger()
             
     
     def set_btn_state(self,state=True,mode=None):

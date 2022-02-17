@@ -32,6 +32,12 @@ The below Python packages are required to run PyZebrascope
 
 Note that nVidia GPU board, CUDA toolkit and CuPy are only necessary for speeding up the computation time for the autofocusing feature. We still have CPU-based codes in auto_focusing.py
 
+### Software interface
+
+PyZebrascope have two main tabbed interface with a camera view window. Additionally, it has an interface to set a laser exclusion area for eye damage prevention.
+
+![Fig2](https://user-images.githubusercontent.com/61713599/154578417-47b0ecab-eab1-4cc5-8db5-1e57805124d1.png)
+
 
 
 

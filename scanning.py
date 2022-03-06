@@ -1,3 +1,16 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Mar 21 16:19:07 2020
+
+@author: ranib
+"""
+
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Mar 19 10:43:33 2020
+
+@author: ranib
+"""
 
 from datetime import datetime
 from PyQt5 import QtWidgets, QtTest
@@ -184,18 +197,17 @@ class Scanning(QObject):
             self.set_btn_state(state=False,mode="scan")
             
             if self.scan_mode==1:
+                
                 QtTest.QTest.qWait(500)
                 self.stopScanning()
                 
-                
-                
+        
+            
     def stopScanning(self):        
         
-        for cam in range(2):
-            if self.mainWindow.cam_on_list[cam]:
-                self.mainWindow.cam_list[cam].stopScanning()     
         
-        self.secure_stop()
+        self.secure_stop('scan')
+        
         
         self.mainWindow.scan_btn.setText("Test Scan")   
         self.mainWindow.scan_btn.clicked.disconnect()
@@ -293,16 +305,9 @@ class Scanning(QObject):
         self.rec_started=0
         self.timer.stop()
         
-        # make sure camera finishes first
-        
-        self.sync_event=True
-    
-        for cam in range(2):
-            if self.mainWindow.cam_on_list[cam]:
-                self.mainWindow.cam_list[cam].stopRecording()      
+        # make sure camera finishes first        
 
-        self.secure_stop()      
-        
+        self.secure_stop('record')              
 
         for i in range(len(self.mainWindow.signals.signal_parameter_box_list)):
             if i != 2: # exclude interval button
@@ -319,15 +324,30 @@ class Scanning(QObject):
         self.mainWindow.rec_btn.clicked.disconnect()
         self.mainWindow.rec_btn.clicked.connect(self.startRecording)
                 
-    def secure_stop(self):
+    def secure_stop(self,mode):
         
-        # a function for preventing camera hangover by sending stop signals
+        
+        self.sync_event=True
+
+        # a function for preventing camera 
         
         self.mainWindow.signal_on=False
         self.mainWindow.signalthread.quit()
         self.mainWindow.signalthread.wait()
         
-        self.mainWindow.signals.finishing_trigger()        
+        
+        self.mainWindow.signals.finishing_trigger()     
+        
+        for cam in range(2):
+            if self.mainWindow.cam_on_list[cam]:
+                if mode=='scan':
+                    self.mainWindow.cam_list[cam].stopScanning()     
+                elif mode=='record':
+                    self.mainWindow.cam_list[cam].stopRecording()     
+                    
+        # a function for preventing camera 
+                
+                    
         
         if any(x for x in self.mainWindow.cam_on_list):
             while self.sync_event:                    
@@ -338,6 +358,7 @@ class Scanning(QObject):
         # ending signal        
                 
         self.mainWindow.signals.stop_finishing_trigger()
+        
             
     
     def set_btn_state(self,state=True,mode=None):

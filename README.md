@@ -8,7 +8,8 @@ PyZebrascope is a high-level interface designed for neural activity imaging expe
 
 ![PyZebrascope_structure](https://user-images.githubusercontent.com/61713599/153410661-dba6a690-caa8-4bfd-ae97-e86001c326c8.png)
 
-A list of hardware that we used to develop PyZebrascope is described in detail in our manuscript (Barbara, Kantharaju et al, link).
+A list of hardware that we used to develop PyZebrascope is described in detail in our manuscript
+https://www.biorxiv.org/content/10.1101/2022.02.13.480249v1
 
 ### Installation requirements
 
@@ -29,7 +30,13 @@ The below Python packages are required to run PyZebrascope
 - h5py (https://www.h5py.org/)
 - CuPy (https://cupy.dev/, need to match its version with CUDA toolkit)
 
-Note that nVidia GPU board, CUDA toolkit and CuPy are only necessary for speeding up the computation time for the autofocusing feature. We still left CPU-basec codes in auto_focusing.py
+Note that nVidia GPU board, CUDA toolkit and CuPy are only necessary for speeding up the computation time for the autofocusing feature. We still have CPU-based codes in auto_focusing.py
+
+### Software interface
+
+PyZebrascope have two main tabbed interface with a camera view window. Additionally, it has an interface to set a laser exclusion area for eye damage prevention.
+
+![Fig2](https://user-images.githubusercontent.com/61713599/154578417-47b0ecab-eab1-4cc5-8db5-1e57805124d1.png)
 
 
 

@@ -669,7 +669,7 @@ class Camera(QObject):
         self.scan_mode=self.mainWindow.scanning.scan_mode
         
         if self.scan_mode==0:
-            self.stack_size=50
+            self.stack_size=100
         else:
             self.stack_size=self.mainWindow.LE_num_planes.value()
         

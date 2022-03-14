@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 
 from PyQt5 import QtWidgets, QtTest, uic,QtTest
 from PyQt5.QtCore import QThread, QObject,QEventLoop
@@ -25,6 +26,7 @@ class Cam_GUI(QtWidgets.QMainWindow):
 
 class Reader(QObject):
 
+#Later reader will get readings by the trigger signal#
   
     def __init__(self, parent=None, mmc=None, app=None, qrec=None, qview=None):
         QObject.__init__(self)
@@ -90,7 +92,8 @@ class Writer(QObject):
         self.qrec = qrec
         self.cam_number=cam_number
         self.app = app
-        self.parent = parent
+        self.parent = parent        
+        self.lead_cam = False
         
         
     def run(self):
@@ -102,6 +105,15 @@ class Writer(QObject):
         self.stack_size=self.parent.stack_size
         self.scan_mode=self.parent.scan_mode
         self.limit_count=self.parent.limit_count
+        
+        for i in range(len(self.parent.mainWindow.cam_on_list)):
+            if self.parent.mainWindow.cam_on_list[i]:
+               lead=i+1
+               self.lead_cam = (self.cam_number==lead)
+               break
+         
+          
+        
         
         while self.parent.writer_on:
             
@@ -128,7 +140,8 @@ class Writer(QObject):
                         
                     # limit by image number for single_plane acquisition
                     
-                    if (self.scan_mode == 0) and (self.limit_count<=self.parent.nimage):
+                    if (self.scan_mode == 0) and (self.limit_count<=self.parent.nimage) and (self.lead_cam):
+                        
                         self.parent.mainWindow.scanning.stopRecording()
                     
                 QtTest.QTest.qWait(1)
@@ -138,7 +151,8 @@ class Writer(QObject):
                 
             # limit by file number for stack acquisition
             
-            if (self.scan_mode == 1) and (self.limit_count<=self.parent.nfile):
+            if (self.scan_mode == 1) and (self.limit_count<=self.parent.nfile) and (self.lead_cam):
+                
                 self.parent.mainWindow.scanning.stopRecording()   
             
             QtTest.QTest.qWait(0.1)                            
@@ -669,7 +683,7 @@ class Camera(QObject):
         self.scan_mode=self.mainWindow.scanning.scan_mode
         
         if self.scan_mode==0:
-            self.stack_size=50
+            self.stack_size=100
         else:
             self.stack_size=self.mainWindow.LE_num_planes.value()
         

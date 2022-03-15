@@ -48,8 +48,8 @@ class Scanning(QObject):
         self.auto_focusing=Auto_focusing(self)
         
         
-        self.rec_started=0
-        self.scan_started=0
+        self.rec_started=False
+        self.scan_started=False
         
         self.rec_time=0
         self.rec_file=0
@@ -164,7 +164,7 @@ class Scanning(QObject):
             
             QtTest.QTest.qWait(100)
                 
-            self.scan_started = 1            
+            self.scan_started = True            
             
             self.start_t=time.time()
             
@@ -214,7 +214,7 @@ class Scanning(QObject):
         self.mainWindow.scan_btn.clicked.connect(self.startScanning)        
         self.set_btn_state(state=True,mode="scan")
         
-        self.scan_started=0
+        self.scan_started = False
         self.scan_timer.stop()
         
         
@@ -258,7 +258,7 @@ class Scanning(QObject):
             
             # start recording           
             
-            self.rec_started=1
+            self.rec_started=True
             
             self.sync_event=True
             
@@ -302,7 +302,7 @@ class Scanning(QObject):
     def stopRecording(self):        
         
         self.rec_stop_time = str(datetime.now())     
-        self.rec_started=0
+        self.rec_started=False
         self.timer.stop()
         
         # make sure camera finishes first        
@@ -404,7 +404,7 @@ class Scanning(QObject):
             #self.mainWindow.recfile.setText(str(int(nread))+' images, '+ str(int(nimage))+' images, '+str(int(nfile))+' files')
             
         
-        if (self.stop_mode==1) and (rtime>self.limit_time):
+        if (self.stop_mode==1) and (rtime>self.limit_time) and (self.rec_started):
             
             self.stopRecording() 
             

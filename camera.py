@@ -661,7 +661,7 @@ class Camera(QObject):
         for b in range(len(btn_list)):
             btn_list[b][0].setEnabled(not self.cam_on==btn_list[b][1])
         
-        if (self.mainWindow.scanning.scan_started==0) and (self.mainWindow.scanning.rec_started==0):
+        if (not self.mainWindow.scanning.scan_started) and (not self.mainWindow.scanning.rec_started):
             self.mainWindow.scan_btn.setEnabled(not self.cam_on)
             self.mainWindow.rec_btn.setEnabled(not self.cam_on)
             

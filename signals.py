@@ -1,7 +1,23 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Mar 21 16:19:07 2020
+
+@author: ranib
+"""
+
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Mar 19 10:43:33 2020
+
+@author: ranib
+"""
 
 from PyQt5 import QtWidgets, QtTest
 import numpy as np
 
+import matplotlib
+matplotlib.rcParams['pdf.fonttype'] = 42 # important for vector text output
+matplotlib.rcParams['ps.fonttype'] = 42  # important for vector text output
 
 from matplotlib import pyplot as plt
 from scipy.ndimage import gaussian_filter1d
@@ -256,7 +272,7 @@ class signals(QObject):
         
         isValid=self.check_params()
         
-        if self.mainWindow.scanning.scan_started==1:
+        if self.mainWindow.scanning.scan_started:
             
             self.mainWindow.scanning.stopScanning()
             self.mainWindow.scanning.startScanning()
@@ -425,7 +441,7 @@ class signals(QObject):
             self.mainWindow.waveform_x_slider.setValue(self.waveform_xaxis)        
             self.draw_signals()
      
-            if self.mainWindow.scanning.scan_started==1:
+            if self.mainWindow.scanning.scan_started:
                 
                 self.mainWindow.scanning.stopScanning()
                 self.mainWindow.scanning.startScanning()
@@ -675,10 +691,10 @@ class signals(QObject):
         if parameter_valid and self.daq_connected:
             
             
-            if self.mainWindow.scanning.scan_started==1:
+            if self.mainWindow.scanning.scan_started:
                 self.sampling_rate = 50000
                 
-            if self.mainWindow.scanning.rec_started==1:
+            if self.mainWindow.scanning.rec_started:
                 self.sampling_rate = 500000
                 
             ##prepare signals (camera, piezo, 6 galvos)
@@ -697,7 +713,7 @@ class signals(QObject):
             self.analog_output = nidaqmx.Task()
             self.analog_output.ao_channels.add_ao_voltage_chan(self.device+'/ao0:7')
              
-            if (self.mainWindow.scanning.scan_started==1) and (self.mainWindow.scanning.scan_mode==1):
+            if (self.mainWindow.scanning.scan_started) and (self.mainWindow.scanning.scan_mode==1):
                 self.analog_output.timing.cfg_samp_clk_timing(rate=self.sampling_rate, sample_mode=nidaqmx.constants.AcquisitionType.FINITE,
                                                               samps_per_chan=self.analog_signals.shape[1])   
             else:
@@ -714,7 +730,7 @@ class signals(QObject):
             self.digital_output = nidaqmx.Task()
             self.digital_output.do_channels.add_do_chan(self.device+'/port0')
             
-            if (self.mainWindow.scanning.scan_started==1) and (self.mainWindow.scanning.scan_mode==1):
+            if (self.mainWindow.scanning.scan_started) and (self.mainWindow.scanning.scan_mode==1):
                 self.digital_output.timing.cfg_samp_clk_timing(rate=self.sampling_rate, source='ao/SampleClock', sample_mode=nidaqmx.constants.AcquisitionType.FINITE,
                                                                samps_per_chan=len(digital_signals))
             else:
@@ -752,7 +768,7 @@ class signals(QObject):
             while self.mainWindow.signal_on:
                 QtTest.QTest.qWait(10)
                 
-            if (self.mainWindow.scanning.scan_started==1) and (self.mainWindow.scanning.scan_mode==1):
+            if (self.mainWindow.scanning.scan_started) and (self.mainWindow.scanning.scan_mode==1):
                 self.digital_output.wait_until_done()
                 
             

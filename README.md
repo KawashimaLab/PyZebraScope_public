@@ -43,6 +43,7 @@ PyZebrascope have two main tabbed interface with a camera view window. Additiona
 
 Image data from cameras are processed like below. Three Qthreads (Reader, Writer, CamView) runs in parallel for each camera to support file writing and data preview. This structure achieved over 800 MB/s writing performances on a fast NVMe drive (Micron 9300) or SSD RAID system.
 
-![Figure3](https://user-images.githubusercontent.com/61713599/158383127-66f8994a-5114-41ef-bbdb-464c142b2dea.png)
+![Figure_file_writing](https://user-images.githubusercontent.com/61713599/158383851-e8de09d3-9b34-4724-ae18-ada36b1585fb.png)
+
 
 

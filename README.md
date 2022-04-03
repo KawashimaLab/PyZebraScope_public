@@ -41,10 +41,16 @@ PyZebrascope have two main tabbed interface with a camera view window. Additiona
 
 ### File writing
 
-Image data from cameras are processed like below. Three Qthreads (Reader, Writer, CamView) runs in parallel for each camera to support file writing and image previewing. This structure achieves over 800 MB/s writing performances on a fast NVMe drive (Micron 9300) or SSD RAID system.
+Image data from cameras are processed like below. Three Qthreads (Reader, Writer, CamView) runs in parallel for each camera to support file writing and image previewing. This structure achieves over 800 MB/s writing performances on a fast NVMe drive (Micron 9300) or SSD RAID system while maintaining a stable resource usage of CPU and system memory.
 
 ![Figure3](https://user-images.githubusercontent.com/61713599/158384102-10bc43bc-614f-488b-a239-7fe9eb15c1cc.png)
 
+
+### Automatic focusing
+
+Alignment of the excitation beam to the focus of the detection objective is a time-consuming process for users. We implemented in auto_focusing.py a module for automatically aligning the side laser position to the position of the detection objective lens. It also works for volumetric scans (5-point sampling between the start and the end position) and two excitation arms.
+
+![Figure4](https://user-images.githubusercontent.com/61713599/161431001-b3f87e12-b2c1-45bb-8a04-3a63504a278b.png)
 
 
 

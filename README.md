@@ -48,7 +48,7 @@ Image data from cameras are processed like below. Three Qthreads (Reader, Writer
 
 ### Automatic focusing
 
-Alignment of the excitation beam to the focus of the detection objective is a time-consuming process for users. We implemented in auto_focusing.py a module for automatically aligning the side laser position to the position of the detection objective lens. It also works for volumetric scans (5-point sampling between the start and the end position) and two excitation arms.
+Alignment of the excitation beam to the focus of the detection objective is a time-consuming process for users. We implemented in auto_focusing.py a module for automatically aligning the side laser position to the position of the detection objective lens. It also works for volumetric scans (5-point sampling between the start and the end position) and two excitation arms to fully compensate for the nonlinear relationship between the position of the detection objective positions and analog voltage input to scanning galvanometers.
 
 ![Figure 4](https://user-images.githubusercontent.com/61713599/161431203-39603c15-fb89-4996-8914-cd1f06ac14d6.png)
 

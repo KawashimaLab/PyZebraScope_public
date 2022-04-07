@@ -36,7 +36,7 @@ Note that nVidia GPU board, CUDA toolkit and CuPy are only necessary for speedin
 
 PyZebrascope supports two laser systems, up to three scanning arms for the front and side illumination of excitation beams, a piezoelectric objective scanner and two sCMOS cameras for multicolor imaging. Below is a configuration with which we tested PyZebrascope.
 
-![Device2](https://user-images.githubusercontent.com/61713599/162279170-8ba5482d-9d9c-4a93-87ad-8894b3581055.png)
+![Device](https://user-images.githubusercontent.com/61713599/162279736-80e5c9c7-3fc6-4e4b-80b3-042a9b5fbaea.png)
 
 ### Software interface
 
@@ -62,5 +62,5 @@ The alignment of the excitation beam to the focus of the detection objective is 
 
 We were able to achieve whole-brain imaging at cellular resolution in a zebrafish performing a motor learning task (kawashima et al., 2016). The imaging volume covers the extremities of the most dorsal part (cerebellum), the most ventral part (hypothalamus), the most rostral part (forebrain), and the most caudal part (hindbrain) at the speed of 1 Hz, 45 planes, 2304 x 1600 pixel resolution.
 
-![Fig5-2](https://user-images.githubusercontent.com/61713599/162279344-fbde67ce-e90c-42d6-9749-00e7d0d47a21.png)
+![Fig5](https://user-images.githubusercontent.com/61713599/162279809-a546ee61-dcb7-4e8b-8353-73de45e7bc5c.png)
 

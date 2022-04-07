@@ -4,7 +4,7 @@ This is a repository for PyZebrascope, an open-source Python platform for brain-
 
 Light-sheet microscopy for whole-brain neural activity imaging in zebrafish requires specific features not available in commercially distributed microscopes. Such features include scanning of two orthogonal excitation beams and eye damage prevention. These particular requirements, as well as numerous device parameters required for the experimenter to manipulate, have been the main bottlenecks for disseminating / developing technology and performing daily experiments. We developed PyZebrascope to address these issues.
 
-PyZebrascope is a high-level interface designed for neural activity imaging experiments based on light-sheet microsscopy in zebrafish. It incorporates functionalities from other open-source microscopy projects such as μManager and additional modules for device control, signal processing, computer vision, and machine learning.
+PyZebrascope is a high-level interface designed for neural activity imaging experiments based on light-sheet microscopy in zebrafish. It incorporates functionalities from other open-source microscopy projects such as μManager and additional modules for device control, signal processing, computer vision, and machine learning.
 
 ![PyZebrascope_structure](https://user-images.githubusercontent.com/61713599/153410661-dba6a690-caa8-4bfd-ae97-e86001c326c8.png)
 
@@ -13,14 +13,14 @@ https://www.biorxiv.org/content/10.1101/2022.02.13.480249v1
 
 ### Installation requirements
 
-PyZebrascope requires the preinstallation of following hardware drivers and low-level interfaces:
+PyZebrascope requires the preinstallation of the following hardware drivers and low-level interfaces:
 
-- Hardware drivers from manufacturers for miscellaneous devices including cameras
+- Hardware drivers from manufacturers for miscellaneous devices, including cameras
 - DAQmx driver from National Instruments (https://www.ni.com/en-il/support/downloads/drivers/download.ni-daqmx.html)
 - μManager (https://micro-manager.org/) for camera interface
 - CUDA toolkit (https://developer.nvidia.com/cuda-toolkit) for fast autofocusing based on nVidia GPU
 
-The below Python packages are required to run PyZebrascope
+The below Python packages are required to run PyZebrascope:
 
 - Anaconda package (https://anaconda.org/anaconda/python)
 - PyQt5 (https://pypi.org/project/PyQt5/)
@@ -32,26 +32,35 @@ The below Python packages are required to run PyZebrascope
 
 Note that nVidia GPU board, CUDA toolkit and CuPy are only necessary for speeding up the computation time for the autofocusing feature. We still have CPU-based codes in auto_focusing.py
 
+### Device configuration
+
+PyZebrascope supports two laser systems, up to three scanning arms for the front and side illumination of excitation beams, a piezoelectric objective scanner and two sCMOS cameras for multicolor imaging. Below is a configuration with which we tested PyZebrascope.
+
+![Device](https://user-images.githubusercontent.com/61713599/162276712-68643eb5-9c3d-4145-ac04-9231ef64e757.png)
+
 ### Software interface
 
-PyZebrascope have two main tabbed interface with a camera view window. Additionally, it has an interface to set a laser exclusion area for eye damage prevention.
+PyZebrascope has two main tabbed interfaces with a camera view window. Additionally, it has an interface to set a laser exclusion area for eye damage prevention.
 
 ![Fig2](https://user-images.githubusercontent.com/61713599/154578417-47b0ecab-eab1-4cc5-8db5-1e57805124d1.png)
 
 
 ### File writing
 
-Image data from cameras are processed like below. Three Qthreads (Reader, Writer, CamView) runs in parallel for each camera to support file writing and image previewing. This structure achieves over 800 MB/s writing performances on a fast NVMe drive (Micron 9300) or SSD RAID system while maintaining a stable resource usage of CPU and system memory.
+Image data from cameras are processed like below. Three Qthreads (Reader, Writer, CamView) run in parallel for each camera to support file writing and image previewing. This structure achieves over 800 MB/s writing performances on a fast NVMe drive (Micron 9300) or SSD RAID system while maintaining a stable resource usage of CPU and system memory.
 
 ![Figure3](https://user-images.githubusercontent.com/61713599/158384102-10bc43bc-614f-488b-a239-7fe9eb15c1cc.png)
 
 
 ### Automatic focusing
 
-Alignment of the excitation beam to the focus of the detection objective is a time-consuming process for users. We implemented in auto_focusing.py a module for automatically aligning the side laser position to the position of the detection objective lens. It also works for volumetric scans (5-point sampling between the start and the end position) and two excitation arms to fully compensate for the nonlinear relationship between the position of the detection objective positions and analog voltage input to scanning galvanometers.
+The alignment of the excitation beam to the focus of the detection objective is a time-consuming process for users. We implemented in auto_focusing.py a module for automatically aligning the side laser position to the position of the detection objective lens. It also works for volumetric scans (5-point sampling between the start and the end position) and two excitation arms to fully compensate for the nonlinear relationship between the position of the detection objective positions and analog voltage input to scanning galvanometers.
 
 ![Figure 4](https://user-images.githubusercontent.com/61713599/161431203-39603c15-fb89-4996-8914-cd1f06ac14d6.png)
 
+## Whole-brain imaging
 
+We were able to achieve whole-brain imaging at cellular resolution in a zebrafish performing a motor learning task (kawashima et al., 2016). The imaging volume covers the extremities of the most dorsal part (cerebellum), the most ventral part (hypothalamus), the most rostral part (forebrain), and the most caudal part (hindbrain) at the speed of 1 Hz, 45 planes, 2304 x 1600 pixel resolution.
 
+![Fig5](https://user-images.githubusercontent.com/61713599/162277857-e066ad0d-4be0-46ba-aa8e-6f811df6ee1c.png)
 

@@ -42,15 +42,13 @@ PyZebrascope supports two laser systems, up to three scanning arms for the front
 
 PyZebrascope has two main tabbed interfaces with a camera view window. Additionally, it has an interface to set a laser exclusion area for eye damage prevention.
 
-![Fig2](https://user-images.githubusercontent.com/61713599/154578417-47b0ecab-eab1-4cc5-8db5-1e57805124d1.png)
-
+![Interface](https://user-images.githubusercontent.com/61713599/162567682-f6fa002d-30bd-4dc2-a28c-75b54cf46055.png)
 
 ### File writing
 
 Image data from cameras are processed like below. Three Qthreads (Reader, Writer, CamView) run in parallel for each camera to support file writing and image previewing. This structure achieves over 800 MB/s writing performances on a fast NVMe drive (Micron 9300) or SSD RAID system while maintaining a stable resource usage of CPU and system memory.
 
-![Figure3](https://user-images.githubusercontent.com/61713599/158384102-10bc43bc-614f-488b-a239-7fe9eb15c1cc.png)
-
+![CameraIO](https://user-images.githubusercontent.com/61713599/162566708-50fa7c9d-6110-41fb-b40b-775a64c4e580.png)
 
 ### Automatic focusing
 
@@ -62,5 +60,4 @@ The alignment of the excitation beam to the focus of the detection objective is 
 
 We were able to achieve whole-brain imaging at cellular resolution in a zebrafish performing a motor learning task (kawashima et al., 2016). The imaging volume covers the extremities of the most dorsal part (cerebellum), the most ventral part (hypothalamus), the most rostral part (forebrain), and the most caudal part (hindbrain) at the speed of 1 Hz, 45 planes, 2304 x 1600 pixel resolution.
 
-![Fig5](https://user-images.githubusercontent.com/61713599/162279809-a546ee61-dcb7-4e8b-8353-73de45e7bc5c.png)
-
+![WholeBrainImaging](https://user-images.githubusercontent.com/61713599/162566738-d485a29b-5234-4a9e-a7d6-70658dd3e0cf.png)

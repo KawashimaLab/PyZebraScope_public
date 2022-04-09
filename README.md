@@ -42,7 +42,7 @@ PyZebrascope supports two laser systems, up to three scanning arms for the front
 
 PyZebrascope has two main tabbed interfaces with a camera view window. Additionally, it has an interface to set a laser exclusion area for eye damage prevention.
 
-![Interface](https://user-images.githubusercontent.com/61713599/162588070-5be3a18a-0f7f-45ee-8db8-53330879814a.png)
+![Interface](https://user-images.githubusercontent.com/61713599/162588133-11872ee5-a6ba-4180-ba83-0d9f87b90d84.png)
 
 ### File writing
 

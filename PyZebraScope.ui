@@ -1490,6 +1490,134 @@
        <string/>
       </property>
      </widget>
+     <widget class="QLabel" name="cpu_usage">
+      <property name="geometry">
+       <rect>
+        <x>800</x>
+        <y>60</y>
+        <width>81</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>12</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>CPU usage</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="cpu_number_display">
+      <property name="geometry">
+       <rect>
+        <x>900</x>
+        <y>60</y>
+        <width>81</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>12</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>0</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="mem_usage">
+      <property name="geometry">
+       <rect>
+        <x>800</x>
+        <y>90</y>
+        <width>81</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>12</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Mem usage</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="process_id">
+      <property name="geometry">
+       <rect>
+        <x>800</x>
+        <y>30</y>
+        <width>81</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>12</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>PID</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="mem_usage_display">
+      <property name="geometry">
+       <rect>
+        <x>900</x>
+        <y>90</y>
+        <width>81</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>12</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>0</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="process_id_display">
+      <property name="geometry">
+       <rect>
+        <x>900</x>
+        <y>30</y>
+        <width>81</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>12</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>0</string>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="resource_monitor_btn">
+      <property name="geometry">
+       <rect>
+        <x>790</x>
+        <y>10</y>
+        <width>171</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>11</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>   Monitor resouces</string>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="Signals_tab">
      <attribute name="title">
@@ -3953,7 +4081,7 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="scan_mode"/>
   <buttongroup name="duration_mode"/>
+  <buttongroup name="scan_mode"/>
  </buttongroups>
 </ui>

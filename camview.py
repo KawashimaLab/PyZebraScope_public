@@ -1,16 +1,25 @@
+# -*- coding: utf-8 -*-
 
+# Form implementation generated from reading ui file 'camwindow.ui'
+#
+# Created by: PyQt5 UI code generator 5.9.2
+#
+# WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtWidgets import QWidget,QGridLayout
 import pyqtgraph as pg
 import numpy as np
 
+
+#import sys
+#sys.path.append('C:\\Program Files\\Micro-Manager-2.0beta')
+#import MMCorePy
 class CamView_Event(pg.ImageView):
     
 
     
     updateSignal = QtCore.pyqtSignal()
-    horizontalROISignal = QtCore.pyqtSignal()
     
     def __init__(self, parent=None, camthread=None, **kargs):
         pg.ImageView.__init__(self, **kargs)
@@ -21,9 +30,8 @@ class CamView_Event(pg.ImageView):
         self.timer.timeout.connect(self.update)
         
         #<--- define the center of the ROI --->
-        self.cx = 2304/2 -20
-        self.cy = 2304/2 - 20
-        self.current_roi = pg.RectROI([self.cx,self.cy],[40,40], movable=False)
+        self.origin = camthread.parent.max_size
+        self.current_roi = pg.RectROI([self.origin[1]/2-20,self.origin[0]/2-20],[40,40], movable=False)
         self.ui.menuBtn.hide()
         self.ui.roiBtn.hide()
         self.ui.histogram.hide()
@@ -39,11 +47,9 @@ class CamView_Event(pg.ImageView):
     def region_changed(self):
         
         self.roi_size = self.current_roi.size()
-        pos = self.current_roi.pos()
-        self.top_left_pos0 = pos[1]
-        self.top_left_pos1 = pos[0]
-        self.roi_dimensions=[self.round_16(self.top_left_pos0),self.round_16(self.top_left_pos1),self.round_16(self.roi_size[1]),self.round_16(self.roi_size[0])]
-        
+        self.origin= self.current_roi.pos()
+        self.roi_dimensions=[self.round_16(self.origin[1]),self.round_16(self.origin[0]),self.round_16(self.roi_size[1]),self.round_16(self.roi_size[0])] # dim0 y, dim1 x
+        self.current_roi.show()
         
     def round_16(self,x):
         return 16*round(x/16)
@@ -52,19 +58,12 @@ class CamView_Event(pg.ImageView):
 
 class CamView(QtCore.QThread):
     
-    setROISignal = QtCore.pyqtSignal()
-    resetROISignal = QtCore.pyqtSignal()
-    stopStreamSignal = QtCore.pyqtSignal()
-    startStreamSignal = QtCore.pyqtSignal()
-    captureSignal = QtCore.pyqtSignal()
-    pushROISignal = QtCore.pyqtSignal()
-    overlaySignal = QtCore.pyqtSignal()
-    
     
     def __init__(self,parent=None):
         
         QtCore.QThread.__init__(self)
         self.cam_main=parent
+        self.max_size=self.cam_main.max_size
         
     
     def setupUi(self, MainWindow):
@@ -89,6 +88,7 @@ class CamView(QtCore.QThread):
         self.master_layout = QGridLayout()
         self.centralwidget.setLayout(self.master_layout)
         
+        MainWindow.setWindowTitle("Camera #" + str(self.cam_main.cam_number) + " View")
         
         # defining image widget class
         
@@ -150,59 +150,75 @@ class CamView(QtCore.QThread):
         self.line.setFrameShape(QtWidgets.QFrame.HLine)
         self.line.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.line.setObjectName("line")
+        
+        
         self.startStream_btn = QtWidgets.QPushButton(self.buttonwidget)
         self.startStream_btn.setGeometry(QtCore.QRect(120, 50, 80, 51))
         self.startStream_btn.setObjectName("startStream_btn")
+        self.startStream_btn.setText("Start Stream")
+        
+        
         self.capture_btn = QtWidgets.QPushButton(self.buttonwidget)
         self.capture_btn.setGeometry(QtCore.QRect(220, 50, 80, 51))
         self.capture_btn.setObjectName("capture_btn")
+        self.capture_btn.setText("Capture")
+        
         self.stopStream_btn = QtWidgets.QPushButton(self.buttonwidget)
         self.stopStream_btn.setGeometry(QtCore.QRect(20, 50, 80, 51))
         self.stopStream_btn.setObjectName("stopStream_btn")
+        self.stopStream_btn.setText("Stop Stream")
+        
         self.resetROI_btn = QtWidgets.QPushButton(self.buttonwidget)
         self.resetROI_btn.setGeometry(QtCore.QRect(120, 120, 80, 51))
         self.resetROI_btn.setObjectName("resetROI_btn")
+        self.resetROI_btn.setText("Reset ROI")
+        
         self.setROI_btn = QtWidgets.QPushButton(self.buttonwidget)
         self.setROI_btn.setGeometry(QtCore.QRect(20, 120, 80, 51))
         self.setROI_btn.setObjectName("setROI_btn")
+        self.setROI_btn.setText("Set ROI")
         
         
         self.pushROI_btn = QtWidgets.QPushButton(self.buttonwidget)
         self.pushROI_btn.setGeometry(QtCore.QRect(440, 120, 80, 51))
         self.pushROI_btn.setObjectName("pushROI_btn")
+        self.pushROI_btn.setText("Push ROI \n to Cam"+str(3-self.cam_main.cam_number))
+        
         self.overlay_btn = QtWidgets.QPushButton(self.buttonwidget)
         self.overlay_btn.setGeometry(QtCore.QRect(540, 120, 80, 51))
         self.overlay_btn.setObjectName("overlay_btn")
+        self.overlay_btn.setText("Overlay")
         
         
         self.max_frame_rate_label = QtWidgets.QLabel(self.buttonwidget)
         self.max_frame_rate_label.setGeometry(QtCore.QRect(320, 90, 220, 20))
         self.max_frame_rate_label.setFont(font)
-        self.max_frame_rate_label.setText("")
-        self.max_frame_rate_label.setObjectName("max_frame_plane_label")
+        self.max_frame_rate_label.setObjectName("max_frame_plane_label")        
+        self.max_frame_rate_label.setText("(Max rate: )")
         
         self.cur_frame_rate_label = QtWidgets.QLabel(self.buttonwidget)
         self.cur_frame_rate_label.setGeometry(QtCore.QRect(320, 70, 220, 20))
         self.cur_frame_rate_label.setFont(font)
-        self.cur_frame_rate_label.setText("")
+        self.cur_frame_rate_label.setText("Curr. rate: ")
         self.cur_frame_rate_label.setObjectName("cur_frame_plane_label")
         
         self.image_size = QtWidgets.QLabel(self.buttonwidget)
         self.image_size.setGeometry(QtCore.QRect(320, 50, 220, 20))
         self.image_size.setFont(font)
         self.image_size.setObjectName("image_size")
+        self.image_size.setText("Image Size : ")
         
         
         self.x_slide_label = QtWidgets.QLabel(self.buttonwidget)
         self.x_slide_label.setGeometry(QtCore.QRect(180, 190, 220, 20))
         self.x_slide_label.setFont(font)
-        self.x_slide_label.setText("")
+        self.x_slide_label.setText("Horizontal size")
         self.x_slide_label.setObjectName("x_slide_label")
         
         self.y_slide_label = QtWidgets.QLabel(self.buttonwidget)
         self.y_slide_label.setGeometry(QtCore.QRect(450, 190, 220, 20))
         self.y_slide_label.setFont(font)
-        self.y_slide_label.setText("")
+        self.y_slide_label.setText("Vertical size")
         self.y_slide_label.setObjectName("y_slide_label")
         
         self.size_x = QtWidgets.QLabel(self.buttonwidget)
@@ -218,14 +234,15 @@ class CamView(QtCore.QThread):
         
         self.x_slide = QtWidgets.QSlider(self.buttonwidget)
         self.x_slide.setGeometry(QtCore.QRect(160, 220, 221, 20))
-        self.x_slide.setMaximum(2304)
+        self.x_slide.setMaximum(self.max_size[0])
         self.x_slide.setMinimum(0)
         self.x_slide.setSingleStep(4)
         self.x_slide.setOrientation(QtCore.Qt.Horizontal)
         self.x_slide.setObjectName("x_slide")
+        
         self.y_slide = QtWidgets.QSlider(self.buttonwidget)
         self.y_slide.setGeometry(QtCore.QRect(440, 220, 221, 20))
-        self.y_slide.setMaximum(2304)
+        self.y_slide.setMaximum(self.max_size[1])
         self.y_slide.setMinimum(0)
         self.y_slide.setSingleStep(4)
         self.y_slide.setOrientation(QtCore.Qt.Horizontal)
@@ -310,20 +327,19 @@ class CamView(QtCore.QThread):
         MainWindow.setStatusBar(self.statusbar)
     
                 
-        self.setROI_btn.clicked.connect(self.setROI)
-        self.pushROI_btn.clicked.connect(self.pushROI)
-        self.overlay_btn.clicked.connect(self.overlay)
-        self.resetROI_btn.clicked.connect(self.resetROI)
-        self.stopStream_btn.clicked.connect(self.stopStream)
-        self.startStream_btn.clicked.connect(self.startStream)
-        self.capture_btn.clicked.connect(self.capture)
-        
-        
+        self.setROI_btn.clicked.connect(self.cam_main.setROI)
+        self.pushROI_btn.clicked.connect(self.cam_main.pushROI)
+        self.overlay_btn.clicked.connect(self.cam_main.setOverlay)
+        self.resetROI_btn.clicked.connect(self.cam_main.resetROI)
+        self.stopStream_btn.clicked.connect(self.cam_main.stopStream)
+        self.startStream_btn.clicked.connect(self.cam_main.startStream)
+        self.capture_btn.clicked.connect(self.cam_main.capture)
         
         self.x_slide.setValue(40)
         self.y_slide.setValue(40)
         self.size_x.setText(str(40))
         self.size_y.setText(str(40))
+        
         self.z_slider.valueChanged.connect(self.z_slider_changed)
         self.x_slide.valueChanged.connect(self.sliders_changed)
         self.y_slide.valueChanged.connect(self.sliders_changed)
@@ -333,40 +349,27 @@ class CamView(QtCore.QThread):
         self.br_absolute.clicked.connect(self.br_absolute_clicked)
         
         
-        self.retranslateUi(MainWindow)
-        QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
-        
-    def retranslateUi(self, MainWindow):
-        self._translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(self._translate("MainWindow","Camera #" + str(self.cam_main.cam_number) + " View"))
-        self.startStream_btn.setText(self._translate("MainWindow", "Start Stream"))
-        self.capture_btn.setText(self._translate("MainWindow", "Capture"))
-        self.stopStream_btn.setText(self._translate("MainWindow", "Stop Stream"))
-        self.resetROI_btn.setText(self._translate("MainWindow", "Reset ROI"))
-        self.setROI_btn.setText(self._translate("MainWindow", "Set ROI"))
-        self.pushROI_btn.setText(self._translate("MainWindow", "Push ROI \n to Cam"+str(3-self.cam_main.cam_number)))
-        self.overlay_btn.setText(self._translate("MainWindow", "Overlay"))
-        self.image_size.setText(self._translate("MainWindow", "Image Size : "))
-        self.max_frame_rate_label.setText(self._translate("MainWindow", "(Max rate: )"))
-        self.cur_frame_rate_label.setText(self._translate("MainWindow", "Curr. rate: "))
-        self.x_slide_label.setText(self._translate("MainWindow", "Horizontal size"))
-        self.y_slide_label.setText(self._translate("MainWindow", "Vertical size"))
     
     def sliders_changed(self):
+        
         x = int(np.floor(self.x_slide.value()/4))*4
         y = int(np.floor(self.y_slide.value()/4))*4
         self.size_x.setText(str(x))
         self.size_y.setText(str(y))
-        self.cx = 2304/2 - x/2
-        self.cy = 2304/2 - y/2
-        self.imv.current_roi.setPos(self.cx,self.cy)
+        
+        self.rx = self.cam_main.roi_dims[3]/2 - x/2
+        self.ry = self.cam_main.roi_dims[2]/2 - y/2
+        
+        self.imv.current_roi.setPos(self.rx,self.ry) # dim 0 x, dim 1 y
         self.imv.current_roi.setSize([x,y])
         self.imv.region_changed()
-        self.cam_main.max_frame_rate=self.cam_main.calc_max_frame_rate(x)
         
-        self.max_frame_rate_label.setText("(Max rate: {:.1f}/s, ".format(self.cam_main.max_frame_rate)+ "{:.1f} ms/fr.)".format(1000/self.cam_main.max_frame_rate))
         self.image_size.setText('Image Size : H'+str(self.imv.roi_dimensions[3])+' x V'+str(self.imv.roi_dimensions[2]))
+        
+        self.cam_main.max_frame_rate=self.cam_main.calc_max_frame_rate(x)        
+        self.max_frame_rate_label.setText("(Max rate: {:.1f}/s, ".format(self.cam_main.max_frame_rate)+ "{:.1f} ms/fr.)".format(1000/self.cam_main.max_frame_rate))
+        
         
     def z_slider_changed(self):
         self.z_plane = int(self.z_slider.value())
@@ -412,42 +415,5 @@ class CamView(QtCore.QThread):
         state=self.br_absolute.isChecked()
         self.cam_main.vabsolute = state
         self.cam_main.update_br_console()
-        
-        
-    def setROI(self):
-        self.y_slide.setEnabled(False)
-        self.x_slide.setEnabled(False)
-        self.setROISignal.emit()
-        
-    def pushROI(self):
-        self.pushROISignal.emit()
-        
-    def overlay(self):
-        self.overlaySignal.emit()
-        
-    def resetROI(self):
-        
-        self.y_slide.setEnabled(True)
-        self.x_slide.setEnabled(True)
-        self.resetROISignal.emit()
-    
-    def stopStream(self):
-        self.stopStreamSignal.emit()
-    
-    def startStream(self):
-        self.startStreamSignal.emit()
-        
-    def capture(self):
-        self.captureSignal.emit()
-        
-        
 
-if __name__ == "__main__":
-    import sys
-    app = QtWidgets.QApplication(sys.argv)
-    MainWindow = QtWidgets.QMainWindow()
-    ui = CamView()
-    ui.setupUi(MainWindow)
-    MainWindow.show()
-    sys.exit(app.exec_())
-
+        

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from PyQt5 import QtWidgets, QtTest, uic,QtTest
-from PyQt5.QtCore import QThread, QObject,QEventLoop
+from PyQt5.QtCore import QThread, QObject,QEventLoop,pyqtSignal
 
 import pymmcore
 import sys
@@ -27,6 +27,8 @@ class Cam_GUI(QtWidgets.QMainWindow):
 class Reader(QObject):
 
 #Later reader will get readings by the trigger signal#
+
+    reader_stop_signal=pyqtSignal()
   
     def __init__(self, parent=None, mmc=None, app=None, qrec=None, qview=None):
         QObject.__init__(self)
@@ -42,7 +44,10 @@ class Reader(QObject):
         self.nread=0
         self.scan_mode =self.parent.scan_mode
         self.cam_mode = self.parent.cam_mode
-        self.stack_size=self.parent.stack_size
+        self.stack_size = self.parent.stack_size
+        self.gap_size = self.parent.gap_size
+        
+        self.record=self.parent.writer_on
         
         if self.scan_mode==1:
             self.parent.cam_win.z_slider.setValue(1)
@@ -57,22 +62,29 @@ class Reader(QObject):
                 if self.scan_mode==0:
                     plane = (self.nread % self.stack_size)  
                 else:
-                    plane = self.nread % (self.stack_size+1)
+                    plane = self.nread % (self.stack_size+self.gap_size)
                 
                 # put it in recording queue or in sample_stack
-                if self.parent.writer_on:
+                if self.parent.writer_on and self.record:
+                    
                     if self.scan_mode==0:
                         self.qrec.put(last_image)                       
-                    elif not (plane==self.stack_size):
+                    elif not (plane>=self.stack_size):
                         self.qrec.put(np.rot90(last_image,-1)) # correct for directions, this rotation opertion is slow
-                else:
-                    if (self.scan_mode==1) and (self.nread<self.stack_size):
+                        
+                elif (not self.record) and (self.scan_mode==1): 
+                    
+                    if (self.nread<self.stack_size):
                         self.qrec.put(np.fliplr(last_image))
+                        
+                    elif (self.nread==self.stack_size):
+                        self.reader_stop_signal.emit()
                     
                 if self.nread % 30 == 0:
                     self.qview.put(np.fliplr(last_image))
                     
                 self.nread +=1
+                
                 
             except:
                 pass
@@ -84,6 +96,8 @@ class Reader(QObject):
         
         
 class Writer(QObject):
+    
+    writer_stop_signal=pyqtSignal()
     
     def __init__(self, parent=None, cam_number = 0, app=None, qrec=None):
         
@@ -112,8 +126,6 @@ class Writer(QObject):
                self.lead_cam = (self.cam_number==lead)
                break
          
-          
-        
         
         while self.parent.writer_on:
             
@@ -142,7 +154,9 @@ class Writer(QObject):
                     
                     if (self.scan_mode == 0) and (self.limit_count<=self.parent.nimage) and (self.lead_cam):
                         
-                        self.parent.mainWindow.scanning.stopRecording()
+                        self.parent.writer_on=False
+                        self.writer_stop_signal.emit()
+                        break
                     
                 QtTest.QTest.qWait(1)
             
@@ -153,7 +167,9 @@ class Writer(QObject):
             
             if (self.scan_mode == 1) and (self.limit_count<=self.parent.nfile) and (self.lead_cam):
                 
-                self.parent.mainWindow.scanning.stopRecording()   
+                self.parent.writer_on=False
+                self.writer_stop_signal.emit()
+                break
             
             QtTest.QTest.qWait(0.1)                            
 
@@ -165,7 +181,7 @@ class Camera(QObject):
     
     def __init__(self, parent=None, app=None, cam_number=0):
         
-        super().__init__()
+        QObject.__init__(self)
         
         self.mainWindow=parent
         self.cam_number=cam_number
@@ -176,13 +192,15 @@ class Camera(QObject):
         self.cam_mode="noscan"
         self.cur_exposure=16
         self.stack_size=50
+        self.gap_size=10
         self.limit_count=1000
         self.rec_mode=0
+        self.max_size=np.array([2304,2304])
         self.cam_names=['C15440-20UP','C14440-20UP']
         
         
-        sys.path.append('C:\\Program Files\\Micro-Manager-2.0beta')
-        mm_dir="C:\Program Files\Micro-Manager-2.0beta"
+        sys.path.append('C:\\Program Files\\Micro-Manager-2.0')
+        mm_dir="C:\Program Files\Micro-Manager-2.0"
         
         try:
             self.mmc = pymmcore.CMMCore()
@@ -204,16 +222,16 @@ class Camera(QObject):
             self.mmc.setProperty('Camera', 'TRIGGER SOURCE','INTERNAL') ## Switch trigger source
             
             self.roi_dims = self.mmc.getROI()
-            self.max_frame_rate=self.calc_max_frame_rate(self.roi_dims[2])
+            self.max_frame_rate=self.calc_max_frame_rate(self.roi_dims[3])
             
             
             self.qrec = Queue()
             self.qview = Queue()
             
             
-            self.image_buffer   = np.zeros((2304,2304),dtype=np.single)
-            self.overlay_buffer = np.zeros((2304,2304,3),dtype=np.single)
-            self.pix_buffer = np.zeros((2304,2304),dtype=np.uint16)
+            self.image_buffer   = np.zeros((self.max_size[0],self.max_size[1]),dtype=np.single)
+            self.overlay_buffer = np.zeros((self.max_size[0],self.max_size[1],3),dtype=np.single)
+            self.pix_buffer = np.zeros((self.max_size[0],self.max_size[1]),dtype=np.uint16)
             
             self.image_buffer[0,0] = 1.
             self.overlay_buffer[0,0,0] = 1.
@@ -246,7 +264,7 @@ class Camera(QObject):
             
             
             self.update_twocam_buttons()
-            self.update_roi_buttons()
+            
             self.btn_list=[
                     self.cam_win.startStream_btn,
                     self.cam_win.stopStream_btn,
@@ -265,7 +283,9 @@ class Camera(QObject):
             self.autoscale=True
             self.pix_max=0
             self.stack_max=0
-            self.sample_stack=np.zeros((50,2304,2304))
+            self.sample_stack=np.zeros((50,self.max_size[0],self.max_size[1]))
+            
+            self.cam_win.max_frame_rate_label.setText("(Max rate: {:.1f}/s, ".format(self.max_frame_rate)+ "{:.1f} ms/fr.)".format(1000/self.max_frame_rate))
         
                 
         except:
@@ -308,21 +328,14 @@ class Camera(QObject):
         self.cam_window.show()
         
         self.cam_win.imv.updateSignal.connect(self.updateview)
-        self.cam_win.setROISignal.connect(self.setROI)
-        self.cam_win.captureSignal.connect(self.capture)
-        self.cam_win.resetROISignal.connect(self.resetROI)
-        self.cam_win.startStreamSignal.connect(self.startStream)
-        self.cam_win.stopStreamSignal.connect(self.stopStream)
-        self.cam_win.pushROISignal.connect(self.pushROI)
-        self.cam_win.overlaySignal.connect(self.setOverlay)
         
         self.update_startstop_buttons()
-        self.update_roi_buttons()
         self.update_twocam_buttons()
         self.update_br_console()
         
         self.view_box = self.cam_win.imv.getView()
         self.view_box.invertY(False)
+        self.view_box.invertX(True)
         
         
             
@@ -335,24 +348,25 @@ class Camera(QObject):
         
     def setROI(self):
         
-        self.ROI=True
-        self.cam_win.imv.region_changed()
-        self.cam_win.imv.current_roi.hide()
-        self.roi_dims = self.cam_win.imv.roi_dimensions
+        self.ROI=True   
+        
+        tmp=self.cam_win.imv.roi_dimensions # dim 0 ym dim 1 x
+        tmp[0] = int(tmp[0]+(self.max_size[0]-self.roi_dims[2])/2)
+        tmp[1] = int(tmp[1]+(self.max_size[1]-self.roi_dims[3])/2)
             
         if self.mmc.isSequenceRunning():
             
             self.stop_camera()
-            self.mmc.setROI(self.roi_dims[0],self.roi_dims[1],self.roi_dims[2],self.roi_dims[3])
+            self.mmc.setROI(tmp[0],tmp[1],tmp[2],tmp[3]) # dim 0 y, dim1 x
             self.start_camera()
             
         else:
             
-            self.mmc.setROI(self.roi_dims[0],self.roi_dims[1],self.roi_dims[2],self.roi_dims[3])
+            self.mmc.setROI(tmp[0],tmp[1],tmp[2],tmp[3]) # dim 0 y, dim1 x
             
-        #self.cam_win.imv.region_changed()
-        self.update_frame_info()
-        self.update_roi_buttons()
+        
+        self.update_frame_info() # this will update self.roi_dims
+        self.cam_win.imv.current_roi.hide()     
         
         
         
@@ -364,17 +378,20 @@ class Camera(QObject):
         if self.mmc.isSequenceRunning():
             self.stop_camera()
             self.mmc.clearROI()
-            self.roi_dims = str(self.mmc.getROI())
-            self.cam_win.imv.current_roi.show()
+            self.roi_dims = self.mmc.getROI()
+            # self.cam_win.imv.current_roi.show()
             self.start_camera()
         else:
             self.mmc.clearROI()
-            self.roi_dims = str(self.mmc.getROI())
+            self.roi_dims = self.mmc.getROI()
             self.cam_win.imv.current_roi.show()
         
-        self.cam_win.imv.region_changed()
+        
+        
         self.update_frame_info()
-        self.update_roi_buttons()
+        self.cam_win.imv.current_roi.hide()     
+        
+        
         
         
     
@@ -385,9 +402,9 @@ class Camera(QObject):
         if not self.ROI:
             other_cam.resetROI()
         else:
-            target_ROI=self.mmc.getROI()
-            other_cam.cam_win.imv.current_roi.setPos(target_ROI[1],target_ROI[0])
-            other_cam.cam_win.imv.current_roi.setSize([target_ROI[3],target_ROI[2]])
+            target_ROI=self.mmc.getROI() # # dim 0 y, dim1 x
+            other_cam.cam_win.imv.current_roi.setPos(target_ROI[1],target_ROI[0]) # dim 0 x, dim1 y
+            other_cam.cam_win.imv.current_roi.setSize([target_ROI[3],target_ROI[2]]) # dim 0 x, dim1 y
             other_cam.setROI()
         
             
@@ -407,7 +424,8 @@ class Camera(QObject):
         if self.mmc.isSequenceRunning():
             
             try:
-                self.pix_buffer = self.qview.get()                
+                self.pix_buffer = self.qview.get()          
+                
                 with self.qview.mutex:
                     self.qview.queue.clear()
             except:
@@ -430,10 +448,10 @@ class Camera(QObject):
         else:            
             other_cam=self.mainWindow.cam_list[2-self.cam_number]
             
-            ROI1=self.mmc.getROI()
+            ROI1=self.mmc.getROI() # dim 0 y, dim 1 x
             ROI2=other_cam.mmc.getROI()
             if all((ROI1[i]-ROI2[i])==0 for i in range(4)):
-                self.overlay_buffer=np.zeros((ROI1[3],ROI1[2],3))
+                self.overlay_buffer=np.zeros((ROI1[3],ROI1[2],3)) # dim 0 x, dim 1 y
                 self.overlay_buffer[:,:,1]=self.image_buffer
                 self.overlay_buffer[:,:,0]=other_cam.image_buffer
                 self.overlay_buffer[:,:,2]=self.overlay_buffer[:,:,0]
@@ -462,9 +480,8 @@ class Camera(QObject):
         else:
             self.image_buffer = (self.pix_buffer.astype(np.single)/self.br_max).clip(0,1)
             
-        if self.camview_thread.isRunning():
-           self.view_box.invertX(True)
          
+            
         if (self.br_max>62000) or (self.stack_max>62000):
             self.cam_win.warning.setText('Camera saturated: please change settings')
         else:
@@ -613,7 +630,6 @@ class Camera(QObject):
         self.mainWindow.scanning.sync_event=False        
         self.cam_win.z_slider.setEnabled(False)            
         self.update_all_buttons(True)
-        self.update_roi_buttons()
         
         
         
@@ -634,6 +650,7 @@ class Camera(QObject):
     def stopScanning(self):
         
         
+        
         self.stop_camera()
         
         if self.mainWindow.scanning.scan_mode==1:
@@ -644,12 +661,13 @@ class Camera(QObject):
             self.cam_win.z_slider.setValue(self.stack_size)        
             self.cam_win.z_slider.setEnabled(True)
             
+        
         with self.qrec.mutex:
             self.qrec.queue.clear()       
             
+            
         self.mainWindow.scanning.sync_event=False    
         self.update_all_buttons(True)
-        self.update_roi_buttons()
         
             
     def update_startstop_buttons(self):
@@ -667,10 +685,7 @@ class Camera(QObject):
             
             
             
-    def update_roi_buttons(self):
-    
-        self.cam_win.setROI_btn.setEnabled(not self.ROI)
-        self.cam_win.resetROI_btn.setEnabled(self.ROI)
+        
         
     def update_br_console(self):
         
@@ -686,6 +701,7 @@ class Camera(QObject):
             self.stack_size=100
         else:
             self.stack_size=self.mainWindow.LE_num_planes.value()
+            self.gap_size=self.mainWindow.signals.num_end_trigger
         
         self.cam_win.z_slider.setMaximum(self.stack_size)
         
@@ -714,7 +730,7 @@ class Camera(QObject):
         
         self.cur_exposure= float(self.mmc.getProperty('Camera', 'Exposure'))
         
-        self.roi_dims = self.mmc.getROI()
+        self.roi_dims = self.mmc.getROI() # dim0 y, dim 1 x
         ''' compute frame rate from ROI '''
         
         self.max_frame_rate=self.calc_max_frame_rate(self.roi_dims[3])
@@ -727,7 +743,7 @@ class Camera(QObject):
         
         
         
-    def calc_max_frame_rate(self, Vn=2304, Exp1=0.000017): # Exp1 means input values in Hamamatsu manual
+    def calc_max_frame_rate(self, Vn,Exp1=0.000017): # Exp1 means input values in Hamamatsu manual
         
         Exp2 = Exp1 - 3.029411e-6 
         H = 4.867647e-6

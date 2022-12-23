@@ -1,6 +1,8 @@
-﻿
+# -*- coding: utf-8 -*-
+
+
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
-from PyQt5.QtCore import QThread, QObject
+from PyQt5.QtCore import QThread, QObject, QTimer, QProcess
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QPixmap
 import pyqtgraph as pg
@@ -21,10 +23,15 @@ from signals import signals
 from eye_exclusion import Eye_exclusion
 from style import setStyle_CSS
 
+
+import psutil
+
  
 root_dir = r'C:\Users\LS_User\Desktop\PyZebraScope'
 
 Ui_MainWindow, QtBaseClass = uic.loadUiType(root_dir + r'\PyZebraScope.ui')
+
+
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     
@@ -51,12 +58,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         ''' Setting for first tab '''        
         
         ### Camera
+        self.cam1thread = None
+        self.cam2thread = None
         self.cam1 = None
         self.cam2 = None   
         self.cam1_on = False # This sets the initial state of loading
         self.cam2_on = False # This sets the initial state of loading   
         
         self.cam_list =       [self.cam1, self.cam2]
+        self.cam_thread_list= [self.cam1thread,self.cam2thread]
         self.cam_on_list =    [self.cam1_on,self.cam2_on]
         self.cam_check_list = [self.cam1_check, self.cam2_check]
         #self.cam_btn_list =   [self.cam1_view_btn, self.cam2_view_btn]
@@ -107,7 +117,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         
         self.eye_exclusion = Eye_exclusion(self)
         
-        
+
+        ### Resource monitoring
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.check_resource_usage)
+        self.timer.setInterval(1000)
+        self.timer.start()
+
+        #self.cpu_number_display.setText('1')   
+       # self.resource_monitor_btn.clicked.connect(self.check_resource_usage)
             
     def closeEvent(self, event):
         
@@ -149,8 +167,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         
         self.cam_on_list[cam] = self.cam_check_list[cam].isChecked()
         
-        if self.cam_on_list[cam]:           
-            self.cam_list[cam] = Camera(parent=self, app=app, cam_number=cam+1)
+        if self.cam_on_list[cam]:       
+            
+            self.cam_thread_list[cam]=QThread()
+            self.cam_list[cam] = Camera(parent=self, app=app, cam_number=cam+1)            
+            self.cam_list[cam].moveToThread(self.cam_thread_list[cam])
+            
+            self.cam_thread_list[cam].start()
             self.cam_list[cam].start_cam_view()
             
             if not self.cam_list[cam].mmc:
@@ -161,13 +184,18 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 
         else:
             if self.cam_list[cam] is not None:
+                
                 self.cam_list[cam].close()
+                self.cam_thread_list[cam].terminate()
+                self.cam_thread_list[cam].wait()
                 
             
             
     def dir_changed(self):
         
         self.save_dir = self.write_directory.text().rstrip('\\')
+        
+
         
     def header_changed(self):
         
@@ -180,6 +208,24 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.save_footer = self.exp_footer.text()
         if self.save_footer != "":
             self.save_footer = "_"+self.save_footer
+            
+    def check_resource_usage(self):
+        
+     
+        pid=os.getpid()
+       
+        self.process_id_display.setText(str(pid))
+       
+       
+        mem_usage = (psutil.Process(pid).memory_full_info().uss)/(1024*1024)
+        mem_usage = round(mem_usage,2)
+        cpu_usage = psutil.Process(pid).cpu_percent(interval=0.1)
+        cpu_usage = round(cpu_usage, 2)
+
+        #print(mem_usage)
+        self.cpu_number_display.setText(str(cpu_usage))
+        self.mem_usage_display.setText(str(mem_usage))
+            
         
         
  
@@ -188,10 +234,12 @@ if __name__=="__main__":
 
 
     app = QtWidgets.QApplication(sys.argv)
+   # app.setApplicationName("PyZebraScope")
+    app.setApplicationDisplayName("PyZebraScope")
     window = MainWindow()
     
     window.show()
-    ## sys.exit(app.exec_()) ## only for debugging
+    sys.exit(app.exec_()) ## only for debugging
     
     
 

@@ -1,11 +1,16 @@
+import matplotlib
+matplotlib.rcParams['pdf.fonttype'] = 42 # important for vector text output
+matplotlib.rcParams['ps.fonttype'] = 42  # important for vector text output
 
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import medfilt
 from scipy.optimize import minimize
-from PyQt5 import QtCore, QtGui, QtWidgets, uic
+from PyQt5 import QtCore, QtGui, QtWidgets, uic,QtTest
+from PyQt5.QtCore import QThread, QObject
 from PyQt5.QtCore import QThread, QObject
 from PyQt5.QtWidgets import QWidget,QGridLayout
+import h5py
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from scipy.interpolate import interp1d
@@ -15,8 +20,6 @@ import cupyx.scipy.ndimage as ndigpu
 
 # from scipy.fft import fft2, fftshift
 # from skimage.transform import warp_polar
-
-
 
 class auto_focus_win(QtCore.QThread):
     
@@ -78,6 +81,7 @@ class AutoFocusing_GUI(QtWidgets.QMainWindow):
 
     def closeEvent(self, event):
         self.parent.close_af_view()
+        self.close()
         
 
 class Auto_focusing(QObject):
@@ -117,8 +121,14 @@ class Auto_focusing(QObject):
         
     def close(self):
         
-        self.close_af_view()            
+        self.auto_focusing_window.close()          
         self.deleteLater()
+        
+        
+    def close_af_view(self):
+        
+        self.af_thread.terminate()
+        self.af_thread.wait()
         
             
     def start_af_view(self):        
@@ -127,9 +137,6 @@ class Auto_focusing(QObject):
         self.auto_focusing_window.show()
         
         
-    def close_af_view(self):
-        
-        self.af_thread.exit()
     
         
     def cupy_fft_transform_warp_polar(self,image):
@@ -231,6 +238,7 @@ class Auto_focusing(QObject):
         self.axes1.set_ylabel('Resolution measure')
         self.axes1.set_xlabel('Searched plane (μm)')
         
+        
         return int(result.x[1])
         
     
@@ -292,16 +300,20 @@ class Auto_focusing(QObject):
         original_scan_mode= self.scanning.scan_mode
         self.scanning.scan_mode=1
         
+        # get stack
         self.scanning.startScanning()        
-        self.scanning.scan_mode = original_scan_mode
-        
-        ## put back parameters
-        
-        self.set_parameters(original_params)
-                            
+        while self.scanning.scan_started:
+            QtTest.QTest.qWait(100)
+            
         for cam in range(2):
             if self.mainWindow.cam_on_list[cam]:
                 stack=self.mainWindow.cam_list[cam].sample_stack     
+        
+        ## put back parameters
+        
+        self.scanning.scan_mode = original_scan_mode
+        self.set_parameters(original_params)
+                            
                 
         stack_max=stack.max(axis=0)
         y_range=np.where(stack_max.max(axis=1)>self.br_threshold)[0]
@@ -426,6 +438,7 @@ class Auto_focusing(QObject):
                         
                         self.axes2.set_ylabel('Y Galvo position (μm)')
                         self.axes2.set_xlabel('Piezo position (μm)')
+                        
                 
                 self.axes2.legend(legend_names)
                     

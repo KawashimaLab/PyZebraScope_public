@@ -52,6 +52,7 @@ class signals(QObject):
         self.ms_exposure_per_plane = [16] # param 3
         self.acquiring_duration = self.num_planes[0] * self.ms_per_plane[0]
         self.gap_duration = self.cycle_duration[0] - self.acquiring_duration
+        self.num_end_trigger = 10 
         self.device = 'PXI1Slot4'
         self.scan_mode=self.mainWindow.scanning.scan_mode
         self.scan_per_line=0.004867647
@@ -170,6 +171,7 @@ class signals(QObject):
         
         self.set_gui_init()
         self.update_params()
+        self.recalculate_signal=False
         
         self.mainWindow.waveform_update_btn.clicked.connect(self.set_waveform_params)
         self.mainWindow.start_signals_btn.clicked.connect(self.start_signals)
@@ -274,25 +276,21 @@ class signals(QObject):
         
         if self.mainWindow.scanning.scan_started:
             
-            self.mainWindow.scanning.stopScanning()
-            self.mainWindow.scanning.startScanning()
+            # should be changed to update signals
+            self.recalculate_signal=True
+            
+            #self.mainWindow.scanning.stopScanning() # original code
+            #self.mainWindow.scanning.startScanning()  # original code
     
             
     def check_params(self):
         
         output=True
         
-        # Prevent reverse galvo scanning
         
-        # y_galvo_inds=[11,15,19]
-        # for i in range(len(y_galvo_inds)):
-        #     print(self.signal_parameter_box_list[y_galvo_inds[i]].value())
-        #     print(self.signal_parameter_box_list[y_galvo_inds[i]+1].value())
-            
         
         # ms_per_plane needs to be longer than ms_exposure_per_plane
         
-        #if self.signal_parameter_box_list[3].value() > (self.signal_parameter_box_list[2].value()-0.2):
         if self.signal_parameter_box_list[3].value() > (self.signal_parameter_box_list[2].value()):
             
             self.mainWindow.param_info.setText('camera exposure needs to be shorter than time per plane')
@@ -314,14 +312,22 @@ class signals(QObject):
                 
         # Stack parameter wrong 
         if self.mainWindow.scanning.scan_mode==1:
+            
             stack_duration=(self.signal_parameter_box_list[1].value()+1)*self.signal_parameter_box_list[2].value()
             if self.signal_parameter_box_list[0].value()<=(stack_duration+100):
-                
-                # self.mainWindow.param_info.setText('(Plane number+1) * (ms per plane) should be less than {:d} ms'.format(self.cycle_duration[0]-100))
                               
                 self.mainWindow.param_info.setText('Cycle duration should be longer than  {:d} ms'.format(int(stack_duration+100)))
  
                 output=False
+                
+            if (self.signal_parameter_box_list[0].value()/self.signal_parameter_box_list[2].value())<33:
+                
+                upper_limit=int(self.signal_parameter_box_list[0].value()/33)
+                self.mainWindow.param_info.setText('Exposure time is too short compared to cycle duration: needs to be <='+ str(upper_limit) +' ms')
+ 
+                output=False
+            
+            
                 
                 
         
@@ -580,7 +586,13 @@ class signals(QObject):
             
             if mode=='piezo':                
                 
-                waveformY[shift:duration+shift]=np.linspace(startV,endV2,duration)                
+                waveformY[shift:duration+shift]=np.linspace(startV,endV2,duration)       
+                
+                
+                # interval = int(self.ms_per_plane[0]/self.precision)
+                
+                # for i in range(self.num_planes[0]+1):                    
+                #     waveformY[int(i*interval+shift):int((i+1)*interval+shift)]=startV+incrementV*i
                         
             else: # Galvo, nonlinear conversion based on autofocusing
             
@@ -621,16 +633,26 @@ class signals(QObject):
         else:
             
             # start of the stack
+            
             shift = int(self.piezo_shift[0]/self.precision)
             trigger_signal[0+shift:int(1/self.precision)+shift] = self.camera_first_trigger_v
             
             # second to last planes 
+            
             for i in range(self.num_planes[0]-1):
                 trigger_signal[int(((i+1)*self.ms_per_plane[0])/self.precision)+shift:
                                int(((i+1)*self.ms_per_plane[0]+1)/self.precision)+shift]=self.camera_trigger_v[0] 
             #last empty plane
-            trigger_signal[int((self.num_planes[0]*self.ms_per_plane[0])/self.precision)+shift:
-                           int((self.num_planes[0]*self.ms_per_plane[0]+1)/self.precision)+shift]=self.camera_end_v[0] 
+            
+            self.num_end_trigger = int(self.signal_parameter_box_list[0].value()/self.signal_parameter_box_list[2].value()-self.signal_parameter_box_list[1].value())
+            #self.num_end_trigger = 1
+            
+            for i in range(self.num_end_trigger):
+                trigger_signal[int(((self.num_planes[0]+i)*self.ms_per_plane[0])/self.precision)+shift:
+                               int(((self.num_planes[0]+i)*self.ms_per_plane[0]+1)/self.precision)+shift]=self.camera_end_v[0] 
+                    
+            # trigger_signal[int((self.num_planes[0]*self.ms_per_plane[0])/self.precision)+shift:
+            #                int((self.num_planes[0]*self.ms_per_plane[0]+1)/self.precision)+shift]=self.camera_end_v[0] 
            
         return trigger_signal
     
@@ -692,10 +714,10 @@ class signals(QObject):
             
             
             if self.mainWindow.scanning.scan_started:
-                self.sampling_rate = 50000
+                self.sampling_rate = 20000
                 
             if self.mainWindow.scanning.rec_started:
-                self.sampling_rate = 500000
+                self.sampling_rate = 200000
                 
             ##prepare signals (camera, piezo, 6 galvos)
             
@@ -705,7 +727,7 @@ class signals(QObject):
                                       self.galvo1X,self.galvo1Y,self.galvo2X,
                                       self.galvo2Y,self.galvo3X,self.galvo3Y))
             
-            digital_signals=self.lasers_to_digital()
+            self.digital_signals=self.lasers_to_digital()
                 
             ### configure analog output
              
@@ -732,10 +754,10 @@ class signals(QObject):
             
             if (self.mainWindow.scanning.scan_started) and (self.mainWindow.scanning.scan_mode==1):
                 self.digital_output.timing.cfg_samp_clk_timing(rate=self.sampling_rate, source='ao/SampleClock', sample_mode=nidaqmx.constants.AcquisitionType.FINITE,
-                                                               samps_per_chan=len(digital_signals))
+                                                               samps_per_chan=len(self.digital_signals))
             else:
                 self.digital_output.timing.cfg_samp_clk_timing(rate=self.sampling_rate, source='ao/SampleClock', sample_mode=nidaqmx.constants.AcquisitionType.CONTINUOUS,
-                                                               samps_per_chan=len(digital_signals))
+                                                               samps_per_chan=len(self.digital_signals))
            
             #self.digital_output.timing.cfg_samp_clk_timing(rate=self.sampling_rate, source='ao/SampleClock', sample_mode=nidaqmx.constants.AcquisitionType.CONTINUOUS)     
             
@@ -749,7 +771,7 @@ class signals(QObject):
             
             ## set digital NI outputs         
             
-            self.dwriter.write_many_sample_port_byte(digital_signals)
+            self.dwriter.write_many_sample_port_byte(self.digital_signals)
     
             ''' This is where everything starts and should be synced'''
             self.digital_output.start()
@@ -766,7 +788,32 @@ class signals(QObject):
             self.mainWindow.signal_on=True
             
             while self.mainWindow.signal_on:
-                QtTest.QTest.qWait(10)
+                
+                if self.recalculate_signal==True:
+                    
+                    self.update_params()
+                    self.analog_signals=np.vstack((self.cam_trigger,self.object_piezo,
+                                              self.galvo1X,self.galvo1Y,self.galvo2X,
+                                              self.galvo2Y,self.galvo3X,self.galvo3Y))
+                    self.digital_signals=self.lasers_to_digital()
+                    
+                    #self.digital_output.stop()
+                    #self.analog_output.stop()
+                    
+                    
+                    
+                    self.awriter.write_many_sample(self.analog_signals)
+                    self.dwriter.write_many_sample_port_byte(self.digital_signals)
+                    
+                    #self.digital_output.start()
+                    #self.analog_output.start()
+                    
+                    print('updated signals')
+                    
+                    self.recalculate_signal=False
+                            
+                    
+                QtTest.QTest.qWait(5)
                 
             if (self.mainWindow.scanning.scan_started) and (self.mainWindow.scanning.scan_mode==1):
                 self.digital_output.wait_until_done()
@@ -828,6 +875,7 @@ class signals(QObject):
         # function for stopping the camera by sending trigger signals
             
         if self.daq_connected:
+            
             self.analog_output.stop()
                 
                 

@@ -25,6 +25,7 @@ from auto_focusing import Auto_focusing
 
 
 
+
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
@@ -103,6 +104,7 @@ class Scanning(QObject):
         self.mainWindow.stop_none.clicked.connect(lambda mode:  self.stop_mode_changed(mode=2))
         self.mainWindow.stop_count_box.valueChanged.connect(self.set_limit_image)
         self.mainWindow.stop_time_box.valueChanged.connect(self.set_limit_time)
+        
     
     
     def close(self):
@@ -158,7 +160,9 @@ class Scanning(QObject):
         
     def startScanning(self):
         
+        
         isValid=self.mainWindow.signals.check_params()
+        
         
         if isValid:            
             
@@ -196,10 +200,16 @@ class Scanning(QObject):
                     
             self.set_btn_state(state=False,mode="scan")
             
-            if self.scan_mode==1:
                 
-                QtTest.QTest.qWait(500)
-                self.stopScanning()
+            for cam in range(2):
+                if self.mainWindow.cam_on_list[cam]:
+                    try:
+                        self.mainWindow.cam_list[cam].reader.reader_stop_signal.disconnect()
+                        self.mainWindow.cam_list[cam].reader.reader_stop_signal.connect(self.stopScanning)
+                    except:
+                        self.mainWindow.cam_list[cam].reader.reader_stop_signal.connect(self.stopScanning)
+                    
+            
                 
         
             
@@ -225,6 +235,7 @@ class Scanning(QObject):
         
             
         isParamValid=self.mainWindow.signals.check_params()
+        
         
         if isParamValid and isFolderValid:            
             
@@ -299,6 +310,15 @@ class Scanning(QObject):
             self.mainWindow.rec_btn.clicked.connect(self.stopRecording)
             
             
+            for cam in range(2):
+                if self.mainWindow.cam_on_list[cam]:
+                    try:
+                        self.mainWindow.cam_list[cam].writer.writer_stop_signal.disconnect()
+                        self.mainWindow.cam_list[cam].writer.writer_stop_signal.connect(self.stopRecording)
+                    except:
+                        self.mainWindow.cam_list[cam].writer.writer_stop_signal.connect(self.stopRecording)
+            
+            
     def stopRecording(self):        
         
         self.rec_stop_time = str(datetime.now())     
@@ -328,15 +348,15 @@ class Scanning(QObject):
         
         
         self.sync_event=True
-
-        # a function for preventing camera 
         
+                
         self.mainWindow.signal_on=False
         self.mainWindow.signalthread.quit()
         self.mainWindow.signalthread.wait()
         
         
         self.mainWindow.signals.finishing_trigger()     
+        
         
         for cam in range(2):
             if self.mainWindow.cam_on_list[cam]:
@@ -346,14 +366,22 @@ class Scanning(QObject):
                     self.mainWindow.cam_list[cam].stopRecording()     
                     
         # a function for preventing camera 
-                
+        
                     
         
-        if any(x for x in self.mainWindow.cam_on_list):
-            while self.sync_event:                    
+        while self.sync_event: 
+            if any(x for x in self.mainWindow.cam_on_list):                   
                 QtTest.QTest.qWait(50)                        
-        else:
-            self.sync_event=False       
+            else:
+                self.sync_event=False      
+                
+        
+                
+        
+                
+
+        # a function for preventing camera 
+        
             
         # ending signal        
                 
@@ -408,7 +436,6 @@ class Scanning(QObject):
             
             self.stopRecording() 
             
-        
 
             
     def scanning_timer(self):

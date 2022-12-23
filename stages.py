@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Feb 17 14:48:17 2020
+
+@author: admin
+"""
+
+''' Stages ''' 
 
 from serial import Serial
 import time
@@ -244,7 +252,8 @@ class Stages(QObject):
         direction = args[1] # sign should be 1 or -1
         
         self.stop=False
-        pos=self.positions[axis]+self.steps[axis]*direction
+        #pos=self.positions[axis]+self.steps[axis]*direction
+        pos=self.pos_boxv[axis].value()+self.steps[axis]*direction
         
         self.pos_boxv[axis].setValue(pos)    
         self.move_axis(axis,pos)    

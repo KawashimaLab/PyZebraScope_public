@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri May  7 09:29:58 2021
+
+@author: LS_User
+"""
+
 
 
 from PyQt5.QtCore import pyqtSignal, QObject

@@ -1,8 +1,14 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon May 25 11:07:31 2020
+
+@author: admin
+"""
 
 import numpy as np
 import matplotlib.pyplot as plt
 from skimage import io
-from PyQt5 import QtCore, QtGui, QtWidgets, uic
+from PyQt5 import QtCore, QtGui, QtWidgets, uic,QtTest
 from PyQt5.QtCore import QThread, QObject
 from PyQt5.QtWidgets import QWidget,QGridLayout
 from PyQt5.QtGui import QPen, QColor
@@ -130,6 +136,9 @@ class eye_exc_win(QtCore.QThread):
             
 
             self.eye_main.mainWindow.scanning.startScanning()
+            while self.eye_main.mainWindow.scanning.scan_started:
+                QtTest.QTest.qWait(100)
+                
             for cam in range(2):
                 if self.eye_main.mainWindow.cam_on_list[cam]:
                     IM=self.eye_main.mainWindow.cam_list[cam].sample_stack
@@ -137,17 +146,20 @@ class eye_exc_win(QtCore.QThread):
             if isinstance(IM, np.ndarray):
             
                 IM_MAX= np.flipud(np.max(IM, axis=1).T)
+                print("stack found")
                 
-                
+                print(1)
+                print(IM_MAX.max())
                 # check if the image size is different
                 
                 image_autorange=False
                 if (IM_MAX.shape[0]!=self.image.shape[0]) or (IM_MAX.shape[1]!=self.image.shape[1]):
                     self.view_box.enableAutoRange()
                     image_autorange=True
-                    
+                
                     
                 
+                print(2)
                 
                 # import image into buffer
                 
@@ -157,13 +169,19 @@ class eye_exc_win(QtCore.QThread):
                 pix_size_z=(signals_handle.piezo_end[0]-signals_handle.piezo_start[0])/(signals_handle.num_planes[0]-1)
                 self.scale_factors = (pix_size_z,pix_size_y)
                 
+                print(3)
                 
                 # set image
                 
                 self.imv.setImage(self.image, axes={'x':1 , 'y':0}, scale=self.scale_factors,autoRange=image_autorange)
                 self.set_level()
                 self.view_box.disableAutoRange()
-                self.set_button_state()      
+                self.set_button_state()    
+                
+                print(4)
+                
+            else:
+                print("stack not found")
         
     def set_level(self):
         

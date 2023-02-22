@@ -1,7 +1,7 @@
-<<<<<<< HEAD
+
 # PyZebraScope
  
-=======
+
 ## PyZebraScope: an open-source platform for brain-wide neural activity imaging in zebrafish
 
 This is a repository for PyZebrascope, an open-source Python platform for brain-wide neural activity imaging in zebrafish.

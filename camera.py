@@ -5,7 +5,8 @@ from PyQt5.QtCore import QThread, QObject,QEventLoop,pyqtSignal
 
 import pymmcore
 import sys
-from queue import Queue
+from collections import deque
+#from queue import Queue
 from camview import CamView
 import numpy as np
 import os
@@ -52,6 +53,9 @@ class Reader(QObject):
         if self.scan_mode==1:
             self.parent.cam_win.z_slider.setValue(1)
             
+        self.frate = int(1000/self.parent.cur_exposure)
+        
+            
         while self.parent.reader_on:
             
             try:
@@ -68,20 +72,20 @@ class Reader(QObject):
                 if self.parent.writer_on and self.record:
                     
                     if self.scan_mode==0:
-                        self.qrec.put(last_image)                       
-                    elif not (plane>=self.stack_size):
-                        self.qrec.put(np.rot90(last_image,-1)) # correct for directions, this rotation opertion is slow
+                        self.qrec.append(last_image)                       
+                    elif (plane<self.stack_size):
+                        self.qrec.append(np.rot90(last_image,-1)) # correct for directions, this rotation opertion is slow (12 ms per plane, 2 ms for writing)
                         
                 elif (not self.record) and (self.scan_mode==1): 
                     
                     if (self.nread<self.stack_size):
-                        self.qrec.put(np.fliplr(last_image))
+                        self.qrec.append(np.fliplr(last_image))
                         
                     elif (self.nread==self.stack_size):
                         self.reader_stop_signal.emit()
                     
-                if self.nread % 30 == 0:
-                    self.qview.put(np.fliplr(last_image))
+                if self.nread % (int(self.frate/2)) == 0:
+                    self.qview.append(np.fliplr(last_image))
                     
                 self.nread +=1
                 
@@ -89,7 +93,7 @@ class Reader(QObject):
             except:
                 pass
             
-            QtTest.QTest.qWait(0.1)
+            QtTest.QTest.qWait(1)
             
             
         
@@ -139,14 +143,15 @@ class Writer(QObject):
             
             while (self.image_i <self.stack_size) and (self.parent.writer_on):
                 
-                if not self.qrec.empty():
+                if self.qrec:
                     
-                    image = self.qrec.get()
-                    dataset = 'image%d' % self.image_i
+                    image = self.qrec.popleft()
+                    dataset = 'image'+format(self.image_i,'03d')
+                    #dataset = 'image%d' % self.image_i
                     self.image_i += 1
                     
-                    with h5py.File(filename,'a') as hf:
-                        hf.create_dataset(dataset,data=image)
+                    #with h5py.File(filename,'a') as hf:
+                    hf.create_dataset(dataset,data=image)
                         
                     self.parent.nimage += 1
                         
@@ -171,7 +176,7 @@ class Writer(QObject):
                 self.writer_stop_signal.emit()
                 break
             
-            QtTest.QTest.qWait(0.1)                            
+            QtTest.QTest.qWait(1)                            
 
 
         
@@ -225,8 +230,8 @@ class Camera(QObject):
             self.max_frame_rate=self.calc_max_frame_rate(self.roi_dims[3])
             
             
-            self.qrec = Queue()
-            self.qview = Queue()
+            self.qrec =  deque()
+            self.qview = deque()
             
             
             self.image_buffer   = np.zeros((self.max_size[0],self.max_size[1]),dtype=np.single)
@@ -309,11 +314,19 @@ class Camera(QObject):
                 
                 
             self.mmc.reset()
+            #self.mmc=pymmcore.CMMCore().
             print('Camera ' + str(self.cam_number) + ' closed')
             
+            
             self.camview_thread.terminate()        
-            self.readthread.terminate()
+            self.camview_thread.wait()        
+            
+            self.readthread.terminate()   
+            self.readthread.wait()
+            
             self.writethread.terminate()
+            self.writethread.wait()
+            
             self.deleteLater()
             
             
@@ -424,10 +437,9 @@ class Camera(QObject):
         if self.mmc.isSequenceRunning():
             
             try:
-                self.pix_buffer = self.qview.get()          
+                self.pix_buffer = self.qview.popleft()          
+                self.qview.clear()
                 
-                with self.qview.mutex:
-                    self.qview.queue.clear()
             except:
                 pass
                 
@@ -520,11 +532,8 @@ class Camera(QObject):
 
             print('Camera ' + str(self.cam_number) + ' started')
             
-            with self.qview.mutex:
-                self.qview.queue.clear()
-                
-            with self.qrec.mutex:
-                self.qrec.queue.clear()       
+            self.qview.clear()
+            self.qrec.clear()       
                 
             self.reader_on=True
             self.readthread.start()
@@ -562,8 +571,7 @@ class Camera(QObject):
                 print('somewhat difficult to stop')
                 pass
         
-        with self.qview.mutex:
-            self.qview.queue.clear()
+        self.qview.clear()
             
         
         if self.cam_win.imv.timer.isActive():
@@ -623,8 +631,8 @@ class Camera(QObject):
         
         self.stop_camera()    
         
-        with self.qrec.mutex:
-            self.qrec.queue.clear()       
+        # with self.qrec.mutex:
+        self.qrec.clear()       
             
         
         self.mainWindow.scanning.sync_event=False        
@@ -655,15 +663,15 @@ class Camera(QObject):
         
         if self.mainWindow.scanning.scan_mode==1:
             for z in range(self.stack_size):
-                if not self.qrec.empty():
-                    self.sample_stack[z,:,:]=self.qrec.get()     
+                if self.qrec:
+                    self.sample_stack[z,:,:]=self.qrec.popleft()     
                     
             self.cam_win.z_slider.setValue(self.stack_size)        
             self.cam_win.z_slider.setEnabled(True)
             
         
-        with self.qrec.mutex:
-            self.qrec.queue.clear()       
+        #with self.qrec.mutex:
+        self.qrec.clear()       
             
             
         self.mainWindow.scanning.sync_event=False    

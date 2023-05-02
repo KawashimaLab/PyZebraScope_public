@@ -17,6 +17,7 @@ from scipy.interpolate import interp1d
 
 import cupy as cp
 import cupyx.scipy.ndimage as ndigpu
+from scipy.ndimage import gaussian_filter
 
 # from scipy.fft import fft2, fftshift
 # from skimage.transform import warp_polar
@@ -199,7 +200,7 @@ class Auto_focusing(QObject):
             
             baseline=image[i][base_ind:]
             inds=np.where(medfilt(image[i][:base_ind],11)<(baseline.mean()+baseline.std()*3))[0]
-            if isinstance(inds, np.ndarray):           
+            if isinstance(inds, np.ndarray):
                 img_measure[i] = inds.min()
             else:
                 img_measure[i] = 0
@@ -246,14 +247,16 @@ class Auto_focusing(QObject):
         
         
         img_polar = self.cupy_fft_transform_warp_polar(stack) # for GPU
+        
+        if np.abs(img_polar).max()>0:
               
-        # img_fft = fft_transform(img) # for CPU
-        # img_polar = polar_tform(img_fft) # for CPU
-        
-        img_project = self.projection_img(img_polar)
-        img_mea     = self.focus_measure(img_project)
-        best_plane  = self.detect_peak(img_mea)
-        
+            img_project = self.projection_img(img_polar)
+            img_mea     = self.focus_measure(img_project)
+            best_plane  = self.detect_peak(img_mea)
+        else:
+            best_plane=int(img_polar.shape[0]/2)
+            print('GPU disconnection. Zero array received. Restart Spyder')
+            
         return best_plane
     
     
@@ -326,7 +329,6 @@ class Auto_focusing(QObject):
             y_range[-1] = min(peak_ind[0]+100,stack_max.shape[0]-1)
             x_range[0]  = max(peak_ind[1]-100,0)
             x_range[-1] = min(peak_ind[1]+100,stack_max.shape[1]-1)
-        
         
         focus_stack=stack[:,y_range[0]:y_range[-1],:][:,:,x_range[0]:x_range[-1]]
         

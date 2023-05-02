@@ -319,6 +319,15 @@ class Auto_focusing(QObject):
         y_range=np.where(stack_max.max(axis=1)>self.br_threshold)[0]
         x_range=np.where(stack_max.max(axis=0)>self.br_threshold)[0]
         
+        if ((y_range[-1]-y_range[0])<200) or ((x_range[-1]-x_range[0])<200):
+            
+            peak_ind=np.unravel_index(np.argmax(gaussian_filter(stack_max,20)),stack_max.shape)
+            y_range[0]  = max(peak_ind[0]-100,0)
+            y_range[-1] = min(peak_ind[0]+100,stack_max.shape[0]-1)
+            x_range[0]  = max(peak_ind[1]-100,0)
+            x_range[-1] = min(peak_ind[1]+100,stack_max.shape[1]-1)
+        
+        
         focus_stack=stack[:,y_range[0]:y_range[-1],:][:,:,x_range[0]:x_range[-1]]
         
         

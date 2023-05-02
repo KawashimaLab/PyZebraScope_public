@@ -1,7 +1,7 @@
-<<<<<<< HEAD
+
 # PyZebraScope
  
-=======
+
 ## PyZebraScope: an open-source platform for brain-wide neural activity imaging in zebrafish
 
 This is a repository for PyZebrascope, an open-source Python platform for brain-wide neural activity imaging in zebrafish.
@@ -65,4 +65,3 @@ The alignment of the excitation beam to the focus of the detection objective is 
 We were able to achieve whole-brain imaging at cellular resolution in a zebrafish performing a motor learning task (kawashima et al., 2016). The imaging volume covers the extremities of the most dorsal part (cerebellum), the most ventral part (hypothalamus), the most rostral part (forebrain), and the most caudal part (hindbrain) at the speed of 1 Hz, 45 planes, 2304 x 1600 pixel resolution.
 
 ![WholeBrainImaging](https://user-images.githubusercontent.com/61713599/162566738-d485a29b-5234-4a9e-a7d6-70658dd3e0cf.png)
->>>>>>> e161ca15ff841e37e43c99420de31be5fe4e0de6

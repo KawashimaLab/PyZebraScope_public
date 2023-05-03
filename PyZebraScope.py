@@ -95,6 +95,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     
         self.nd_filters=ND_Filter(self)
         
+        ### check the status of objective servo
+        
+        self.piezo = Piezo(self)
+        
                 
         ### Set up waveform ignals        ◘
         
@@ -106,14 +110,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         
 
         
-        ### check the status of objective servo
-        self.piezo = Piezo(self)
-        
         ### stages
-                
         self.stages = Stages(self)
+        self.stages.start()
         
-        ### stages
+        
+        ### eye eclusion
         
         self.eye_exclusion = Eye_exclusion(self)
         
@@ -140,6 +142,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             for cam in range(2):
                 if self.cam_on_list[cam]:
                     self.cam_list[cam].close()
+                    self.cam_thread_list[cam].terminate()
+                    self.cam_thread_list[cam].wait()
             
             # Closing stages, filters, daq
             
@@ -148,11 +152,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.setting.close()
             
             self.nd_filters.close()
-            self.signals.close()
             self.piezo.close()
             self.lasers.close()
-            self.stages.close()
             self.eye_exclusion.close()
+            
+            self.signals.close()
+            self.signalthread.terminate()
+            self.signalthread.wait()
+            
+            self.stages.close()
             
             self.deleteLater()
         
@@ -170,17 +178,20 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if self.cam_on_list[cam]:       
             
             self.cam_thread_list[cam]=QThread()
-            self.cam_list[cam] = Camera(parent=self, app=app, cam_number=cam+1)            
+            self.cam_list[cam] = Camera(parent=self, app=app, cam_number=cam+1)    
             self.cam_list[cam].moveToThread(self.cam_thread_list[cam])
             
-            self.cam_thread_list[cam].start()
-            self.cam_list[cam].start_cam_view()
+            if self.cam_list[cam].mmc:
+                
+                self.cam_thread_list[cam].start()
+                self.cam_list[cam].start_cam_view()
             
-            if not self.cam_list[cam].mmc:
+            else:
                 
                 self.cam_check_list[cam].setChecked(False)
                 self.cam_list[cam]=None
                 self.cam_on_list[cam]=False
+                self.cam_thread_list[cam]=None
                 
         else:
             if self.cam_list[cam] is not None:
@@ -188,6 +199,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.cam_list[cam].close()
                 self.cam_thread_list[cam].terminate()
                 self.cam_thread_list[cam].wait()
+                self.cam_thread_list[cam]=None
                 
             
             

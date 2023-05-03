@@ -89,14 +89,12 @@ class Reader(QObject):
                     
                 self.nread +=1
                 
-                
             except:
+                
+                QtTest.QTest.qWait(1)
+                
                 pass
             
-            QtTest.QTest.qWait(1)
-            
-            
-        
         
         
 class Writer(QObject):
@@ -162,8 +160,9 @@ class Writer(QObject):
                         self.parent.writer_on=False
                         self.writer_stop_signal.emit()
                         break
+                else:
                     
-                QtTest.QTest.qWait(1)
+                    QtTest.QTest.qWait(1)
             
             hf.close()
             self.parent.nfile += 1
@@ -436,12 +435,10 @@ class Camera(QObject):
         
         if self.mmc.isSequenceRunning():
             
-            try:
-                self.pix_buffer = self.qview.popleft()          
+            if self.qview:
+                self.pix_buffer = self.qview.popleft()  
                 self.qview.clear()
                 
-            except:
-                pass
                 
             if (not self.writer_on) and (not self.cur_exposure == self.mainWindow.signals.ms_exposure_per_plane[0]):
                 

@@ -34,6 +34,24 @@ The below Python packages are required to run PyZebrascope:
 - h5py (https://www.h5py.org/)
 - CuPy (https://cupy.dev/, need to match its version with CUDA toolkit)
 
+As of December 2023, we confirmed its functionality in Windows10 (x64) with below Python packages
+
+conda 23.11.0 
+Python 3.11.5
+numpy 1.26.2
+spyder 5.4.3
+PyQt5: 5.15.10
+pyqtgraph: 0.13.3
+nidaqmx: 0.9.0
+h5py: 3.9.0
+pyserial: 3.5
+cupy-cuda12x: 12.3.0 (for CUDA 12)
+
+micro-manager-2.0.0
+pymmcore: 10.1.1.70.6 
+(this is not the latest but is compatible with currently available Hamamatsu API, which requires Device API version 70 and Module API version 10)
+
+
 Note that nVidia GPU board, CUDA toolkit and CuPy are only necessary for speeding up the computation time for the autofocusing feature. We still have CPU-based codes in auto_focusing.py
 
 ### Device configuration

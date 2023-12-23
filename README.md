@@ -51,7 +51,7 @@ As of December 2023, we confirmed its functionality in Windows10 (x64) with belo
 
 - micro-manager-2.0.0
 - pymmcore: 10.1.1.70.6
-  (not the latest but is compatible with currently available Hamamatsu API, which requires Device API v70 and Module API v10)
+  (not the latest but is compatible with an available Hamamatsu API, which requires Device API v70 and Module API v10)
 
 
 ### Device configuration

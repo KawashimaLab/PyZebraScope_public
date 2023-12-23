@@ -26,6 +26,7 @@ class Stages(QObject):
         # 2  Also, probably better to move to ref position in unreferenced mode
         
         self.mainWindow=parent
+        self.stage_on = False
         
         self.sample_y_pos = 165
         self.sample_x_pos = 52.57
@@ -74,14 +75,9 @@ class Stages(QObject):
             self.step_button[2][1].clicked.connect(lambda args: self.step_move(args=(2,-1)))
             
             self.stage_init()
+            self.stage_on = True
             
     
-            
-            self.timer = QTimer()
-            self.timer.setInterval(500) # refresh position info at 2 Hz
-            self.timer.timeout.connect(self.get_positions)
-            self.timer.start()
-            
             print('Stage connected')
             
         except:
@@ -98,7 +94,15 @@ class Stages(QObject):
                 self.step_button[i][0].setEnabled(False)
                 self.step_button[i][1].setEnabled(False)
                 
+            self.stage_on = False
             print('Stage not available')
+        
+    def start(self):
+            
+        self.timer = QTimer()
+        self.timer.setInterval(500) # refresh position info at 2 Hz
+        self.timer.timeout.connect(self.get_positions)
+        self.timer.start()
         
         
     def close(self):

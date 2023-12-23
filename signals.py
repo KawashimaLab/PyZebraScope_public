@@ -306,7 +306,7 @@ class signals(QObject):
                 
             if self.signal_parameter_box_list[3].value() < min_cam_exposure[cam]:
                 
-                self.mainWindow.param_info.setText('camerea exposure too short for the current ROI: minimum {:.2f} ms'.format(min_cam_exposure[cam]))
+                self.mainWindow.param_info.setText('camera exposure too short for the current ROI: minimum {:.2f} ms'.format(min_cam_exposure[cam]))
                 output=False
                 
                 
@@ -423,7 +423,7 @@ class signals(QObject):
         
         self.mainWindow.waveform_x_slider.blockSignals(True)
         tlen=len(self.galvo1X)*self.precision
-        self.mainWindow.waveform_x_slider.setValue(tlen)
+        self.mainWindow.waveform_x_slider.setValue(int(tlen))
         self.waveform_xaxis=tlen
         self.mainWindow.waveform_x_slider.blockSignals(False)
         
@@ -444,7 +444,7 @@ class signals(QObject):
             self.update_params()
             
             self.waveform_xaxis=len(self.galvo1X)*self.precision
-            self.mainWindow.waveform_x_slider.setValue(self.waveform_xaxis)        
+            self.mainWindow.waveform_x_slider.setValue(int(self.waveform_xaxis))        
             self.draw_signals()
      
             if self.mainWindow.scanning.scan_started:
@@ -644,7 +644,7 @@ class signals(QObject):
                                int(((i+1)*self.ms_per_plane[0]+1)/self.precision)+shift]=self.camera_trigger_v[0] 
             #last empty plane
             
-            self.num_end_trigger = int(self.signal_parameter_box_list[0].value()/self.signal_parameter_box_list[2].value()-self.signal_parameter_box_list[1].value())
+            self.num_end_trigger = int(self.signal_parameter_box_list[0].value()/self.signal_parameter_box_list[2].value()-self.signal_parameter_box_list[1].value()) # temporary solution
             #self.num_end_trigger = 1
             
             for i in range(self.num_end_trigger):

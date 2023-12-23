@@ -2,6 +2,7 @@
 
 from PyQt5 import QtWidgets, QtTest, uic,QtTest
 from PyQt5.QtCore import QThread, QObject,QEventLoop,pyqtSignal
+import pyqtgraph as pg
 
 import pymmcore
 import sys
@@ -61,6 +62,8 @@ class Reader(QObject):
             try:
                 last_image = self.mmc.popNextImage()
                 
+                #last_image[:]=self.nread
+                
                 # check which plane in a stack
                 
                 if self.scan_mode==0:
@@ -74,12 +77,13 @@ class Reader(QObject):
                     if self.scan_mode==0:
                         self.qrec.append(last_image)                       
                     elif (plane<self.stack_size):
-                        self.qrec.append(np.rot90(last_image,-1)) # correct for directions, this rotation opertion is slow (12 ms per plane, 2 ms for writing)
-                        
+                        #self.qrec.append(np.rot90(last_image,-1)) #  This rotation opertion is slow (12 ms per plane, 2 ms for writing)                 
+                        self.qrec.append(last_image.swapaxes(0,1)[:,::-1]) # swap axes is ~20 % faster than rot90 (x,-1)
+  
                 elif (not self.record) and (self.scan_mode==1): 
                     
                     if (self.nread<self.stack_size):
-                        self.qrec.append(np.fliplr(last_image))
+                        self.qrec.append(np.fliplr(last_image)) # fliplr is fast
                         
                     elif (self.nread==self.stack_size):
                         self.reader_stop_signal.emit()
@@ -88,6 +92,8 @@ class Reader(QObject):
                     self.qview.append(np.fliplr(last_image))
                     
                 self.nread +=1
+                
+                
                 
             except:
                 
@@ -132,7 +138,6 @@ class Writer(QObject):
         while self.parent.writer_on:
             
             digits = len(str(self.parent.nfile))
-
             name = '\\cam'+str(self.cam_number)+'_' + (5-digits)*'0' + '%d.h5' % self.parent.nfile              
             filename = self.target_dir +  name
             hf = h5py.File(filename,'a')
@@ -203,99 +208,103 @@ class Camera(QObject):
         self.cam_names=['C15440-20UP','C14440-20UP']
         
         
-        sys.path.append('C:\\Program Files\\Micro-Manager-2.0')
-        mm_dir="C:\Program Files\Micro-Manager-2.0"
+        mm_dir=r"C:\Users\LS_User\Desktop\PyZebraScope" 
         
-        try:
-            self.mmc = pymmcore.CMMCore()
-            self.mmc.setDeviceAdapterSearchPaths([mm_dir])
-            self.mmc.loadDevice('Camera','HamamatsuHam', 'HamamatsuHam_DCAM')
-            self.mmc.initializeAllDevices()
-            
-            self.cam_name = self.mmc.getProperty('Camera','CameraName') #<-- fast mode
-            print(self.cam_name)
-            if not self.cam_name == self.cam_names[cam_number-1]:
-                self.mmc.reset()
-                raise Exception("camera "+str(cam_number)+" not available:")
-                
-            print('Camera ' + str(self.cam_number) + ' loaded: ' + self.cam_name)
-            
-            self.mmc.setProperty('Camera', 'ScanMode', '3') #<-- fast mode
-            self.mmc.setProperty('Camera', 'TRIGGER ACTIVE', 'SYNCREADOUT') #<-- EDGE, LEVEL, SYNCREADOUT
-            self.mmc.setProperty('Camera', 'TRIGGER GLOBAL EXPOSURE', 'DELAYED') #<-- GLOBAL RESET or DELAYED
-            self.mmc.setProperty('Camera', 'TRIGGER SOURCE','INTERNAL') ## Switch trigger source
-            
-            self.roi_dims = self.mmc.getROI()
-            self.max_frame_rate=self.calc_max_frame_rate(self.roi_dims[3])
-            
-            
-            self.qrec =  deque()
-            self.qview = deque()
-            
-            
-            self.image_buffer   = np.zeros((self.max_size[0],self.max_size[1]),dtype=np.single)
-            self.overlay_buffer = np.zeros((self.max_size[0],self.max_size[1],3),dtype=np.single)
-            self.pix_buffer = np.zeros((self.max_size[0],self.max_size[1]),dtype=np.uint16)
-            
-            self.image_buffer[0,0] = 1.
-            self.overlay_buffer[0,0,0] = 1.
-            self.pix_buffer[0,0] = 1
-            
-            self.target_dir=""
-            
-            self.readthread = QThread()
-            self.reader = Reader(mmc=self.mmc, parent=self, app=self.app, qrec=self.qrec, qview=self.qview)
-            self.reader.moveToThread(self.readthread)
-            self.reader_on=False
-            
-            self.writethread = QThread()
-            self.writer = Writer(parent=self, cam_number = self.cam_number, app=self.app, qrec=self.qrec)
-            self.writer.moveToThread(self.writethread)
-            self.writer_on=False
-            
-            self.readthread.started.connect(self.reader.run)
-            self.writethread.started.connect(self.writer.run)
-            
-            self.cam_window = Cam_GUI(self) #QtWidgets.QMainWindow()
-            self.cam_win = CamView(self)
-            self.cam_win.setupUi(self.cam_window)
-            self.camview_thread = self.cam_win
-            self.camview_thread.started.connect(self.updateview)
-            
-            
-            self.cam_on=False
-            self.ROI=False
-            
-            
-            self.update_twocam_buttons()
-            
-            self.btn_list=[
-                    self.cam_win.startStream_btn,
-                    self.cam_win.stopStream_btn,
-                    self.cam_win.capture_btn,
-                    self.cam_win.resetROI_btn,
-                    self.cam_win.setROI_btn,
-                    self.cam_win.pushROI_btn,
-                    self.cam_win.overlay_btn]
-            
-            self.overlay=False
-            
-            self.br_max=100.0
-            self.br_min=0.0
-            self.vpercentile=100
-            self.vabsolute=False
-            self.autoscale=True
-            self.pix_max=0
-            self.stack_max=0
-            self.sample_stack=np.zeros((50,self.max_size[0],self.max_size[1]))
-            
-            self.cam_win.max_frame_rate_label.setText("(Max rate: {:.1f}/s, ".format(self.max_frame_rate)+ "{:.1f} ms/fr.)".format(1000/self.max_frame_rate))
+        ## currently device interface 70, API version 10
+        ## copy and paste "mmgr_dal_HamamatsuHam.dll" to the above directory from micromanager2.0 installation folder 
         
-                
-        except:
+        # try:
+        self.mmc = pymmcore.CMMCore()
+        self.mmc.setDeviceAdapterSearchPaths([mm_dir])
+        self.mmc.loadDevice('Camera','HamamatsuHam', 'HamamatsuHam_DCAM')
+        self.mmc.initializeAllDevices()
+        
+        self.cam_name = self.mmc.getProperty('Camera','CameraName') #<-- fast mode
+        print(self.cam_name)
+        if not self.cam_name == self.cam_names[cam_number-1]:
+            self.mmc.reset()
+            raise Exception("camera "+str(cam_number)+" not available:")
             
-            self.mmc=None
-            print('Camera ' + str(self.cam_number) + ' not available')
+        print('Camera ' + str(self.cam_number) + ' loaded: ' + self.cam_name)
+        
+        self.mmc.setProperty('Camera', 'ScanMode', '3') #<-- fast mode
+        self.mmc.setProperty('Camera', 'TRIGGER ACTIVE', 'SYNCREADOUT') #<-- EDGE, LEVEL, SYNCREADOUT
+        self.mmc.setProperty('Camera', 'TRIGGER GLOBAL EXPOSURE', 'DELAYED') #<-- GLOBAL RESET or DELAYED
+        self.mmc.setProperty('Camera', 'TRIGGER SOURCE','INTERNAL') ## Switch trigger source
+        
+        self.roi_dims = self.mmc.getROI()
+        self.max_frame_rate=self.calc_max_frame_rate(self.roi_dims[3])
+        
+        
+        self.qrec =  deque()
+        self.qview = deque()
+        
+        
+        self.image_buffer   = np.zeros((self.max_size[0],self.max_size[1]),dtype=np.single)
+        self.overlay_buffer = np.zeros((self.max_size[0],self.max_size[1],3),dtype=np.single)
+        self.pix_buffer = np.zeros((self.max_size[0],self.max_size[1]),dtype=np.uint16)
+        
+        self.image_buffer[0,0] = 1.
+        self.overlay_buffer[0,0,0] = 1.
+        self.pix_buffer[0,0] = 1
+        
+        self.target_dir=""
+        
+        self.readthread = QThread()
+        self.reader = Reader(mmc=self.mmc, parent=self, app=self.app, qrec=self.qrec, qview=self.qview)
+        self.reader.moveToThread(self.readthread)
+        self.reader_on=False
+        
+        self.writethread = QThread()
+        self.writer = Writer(parent=self, cam_number = self.cam_number, app=self.app, qrec=self.qrec)
+        self.writer.moveToThread(self.writethread)
+        self.writer_on=False
+        
+        self.readthread.started.connect(self.reader.run)
+        self.writethread.started.connect(self.writer.run)
+        
+        self.cam_window = Cam_GUI(self) #QtWidgets.QMainWindow()
+        self.cam_win = CamView(self)
+        self.cam_win.setupUi(self.cam_window)
+        self.camview_thread = self.cam_win
+        self.camview_thread.started.connect(self.updateview)
+        
+        
+        self.cam_on=False
+        self.ROI=False
+        
+        
+        self.update_twocam_buttons()
+        
+        self.btn_list=[
+                self.cam_win.startStream_btn,
+                self.cam_win.stopStream_btn,
+                self.cam_win.capture_btn,
+                self.cam_win.resetROI_btn,
+                self.cam_win.setROI_btn,
+                self.cam_win.pushROI_btn,
+                self.cam_win.overlay_btn]
+        
+        self.overlay=False
+        
+        self.br_max=100.0
+        self.br_min=0.0
+        self.vpercentile=100
+        self.vabsolute=False
+        self.autoscale=True
+        self.pix_max=0
+        self.stack_max=0
+        self.cursor_pos=[8,8]
+        self.cursor_brightness=0
+        self.sample_stack=np.zeros((50,self.max_size[0],self.max_size[1]))
+        
+        self.cam_win.max_frame_rate_label.setText("(Max rate: {:.1f}/s, ".format(self.max_frame_rate)+ "{:.1f} ms/fr.)".format(1000/self.max_frame_rate))
+    
+                
+        # except:
+            
+            # self.mmc=None
+            # print('Camera ' + str(self.cam_number) + ' not available')
                 
         
         
@@ -379,6 +388,8 @@ class Camera(QObject):
         
         self.update_frame_info() # this will update self.roi_dims
         self.cam_win.imv.current_roi.hide()     
+         
+        self.reset_cursor()
         
         
         
@@ -401,7 +412,8 @@ class Camera(QObject):
         
         
         self.update_frame_info()
-        self.cam_win.imv.current_roi.hide()     
+        self.cam_win.imv.current_roi.hide()    
+        self.reset_cursor()
         
         
         
@@ -418,6 +430,17 @@ class Camera(QObject):
             other_cam.cam_win.imv.current_roi.setPos(target_ROI[1],target_ROI[0]) # dim 0 x, dim1 y
             other_cam.cam_win.imv.current_roi.setSize([target_ROI[3],target_ROI[2]]) # dim 0 x, dim1 y
             other_cam.setROI()
+            
+    def reset_cursor(self):
+        
+        self.cursor_pos=[8,8]
+        self.cam_win.cursor_pos.setText('(6,6)')
+        
+        self.cam_win.imv.removeItem(self.cam_win.imv.pci)
+        self.cam_win.imv.pci=QtWidgets.QGraphicsEllipseItem(0, 0, 15, 15)
+        self.cam_win.imv.pci.setPen(pg.mkPen(color=(255, 0, 0, 100),width=2))
+        self.cam_win.imv.addItem(self.cam_win.imv.pci)
+        
         
             
             
@@ -438,6 +461,7 @@ class Camera(QObject):
             if self.qview:
                 self.pix_buffer = self.qview.popleft()  
                 self.qview.clear()
+                self.cursor_brightness = self.pix_buffer[self.cursor_pos[0]-7:self.cursor_pos[0]+8,:][:,self.cursor_pos[1]-7:self.cursor_pos[1]+8].mean()
                 
                 
             if (not self.writer_on) and (not self.cur_exposure == self.mainWindow.signals.ms_exposure_per_plane[0]):
@@ -501,7 +525,12 @@ class Camera(QObject):
            
     def set_image(self):
         
-        self.cam_win.imv.setImage(self.image_buffer, autoRange=self.autoscale, autoLevels=False)      
+        self.cam_win.imv.setImage(self.image_buffer, autoRange=self.autoscale, autoLevels=False)     
+        if not np.isnan(self.cursor_brightness):
+            self.cam_win.cursor_value.setText(str(int(self.cursor_brightness)))
+        else:
+            self.cam_win.cursor_value.setText('NaN')
+            
                     
    
         

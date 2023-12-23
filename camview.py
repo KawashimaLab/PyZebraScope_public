@@ -25,18 +25,25 @@ class CamView_Event(pg.ImageView):
         pg.ImageView.__init__(self, **kargs)
         
         self.setWindowTitle('Cam View')
+        self.parent=parent
+        self.camthread=camthread
         
         self.timer = pg.QtCore.QTimer(self)
         self.timer.timeout.connect(self.update)
         
         #<--- define the center of the ROI --->
-        self.origin = camthread.parent.max_size
+        self.origin = self.camthread.parent.max_size
         self.current_roi = pg.RectROI([self.origin[1]/2-20,self.origin[0]/2-20],[40,40], movable=False)
         self.ui.menuBtn.hide()
         self.ui.roiBtn.hide()
         self.ui.histogram.hide()
         self.addItem(self.current_roi)
-        self.setImage(camthread.parent.image_buffer)
+        self.setImage(self.camthread.parent.image_buffer)
+        self.pci=QtWidgets.QGraphicsEllipseItem(0, 0, 15, 15)
+        self.pci.setPen(pg.mkPen(color=(255, 0, 0, 100),width=2))
+        self.addItem(self.pci)
+        
+        self.scene.sigMouseClicked.connect(self.mouse_clicked)
         
         
     def update(self):
@@ -54,6 +61,21 @@ class CamView_Event(pg.ImageView):
     def round_16(self,x):
         return 16*round(x/16)
     
+    def mouse_clicked(self, evt):
+        
+        pos = self.getImageItem().mapFromScene(evt.pos())
+        
+        shape = self.camthread.parent.image_buffer.shape
+        if (min(pos.x(),pos.y())>8) & (pos.x()<(shape[0]-8)) & (pos.y()<(shape[1]-8)):
+            self.camthread.parent.cursor_pos[0]=int(pos.x())
+            self.camthread.parent.cursor_pos[1]=int(pos.y())
+            
+            self.removeItem(self.pci)
+            self.pci = QtWidgets.QGraphicsEllipseItem(pos.x()-8, pos.y()-8, 15, 15)
+            self.pci.setPen(pg.mkPen(color=(255, 0, 0, 100),width=2))
+            self.addItem(self.pci)
+            
+            self.camthread.parent.cam_win.cursor_pos.setText('('+str(int(pos.x()))+','+str(int(pos.y()))+')')
 
 
 class CamView(QtCore.QThread):
@@ -94,7 +116,7 @@ class CamView(QtCore.QThread):
         
         self.image_layout = QGridLayout()        
         #self.imv = CamView_Event(self.centralwidget,camthread=MainWindow)
-        self.imv = CamView_Event(camthread=MainWindow)
+        self.imv = CamView_Event(parent=self,camthread=MainWindow)
         self.master_layout.addLayout(self.image_layout,0,0,1,1)
         self.image_layout.addWidget(self.imv,0,0,1,1)
         #self.imv.setGeometry(QtCore.QRect(20, 10, 751, 441))
@@ -132,6 +154,30 @@ class CamView(QtCore.QThread):
         #self.z_plane_num.setFont(font)
         self.z_plane_num.setText("1")
         self.z_plane_num.setObjectName("z_plane_num")
+        
+        self.cursor_label = QtWidgets.QLabel(self.z_slider_box)
+        self.cursor_label.setGeometry(QtCore.QRect(10,420, 60, 20))
+        self.cursor_label.setFont(font)
+        self.cursor_label.setText("Cursor")
+        self.cursor_label.setObjectName("cursor_label")
+        
+        self.cursor_label2 = QtWidgets.QLabel(self.z_slider_box)
+        self.cursor_label2.setGeometry(QtCore.QRect(10,433, 60, 20))
+        self.cursor_label2.setFont(font)
+        self.cursor_label2.setText("Value")
+        self.cursor_label2.setObjectName("cursor_label2")
+        
+        
+        self.cursor_pos = QtWidgets.QLabel(self.z_slider_box)
+        self.cursor_pos.setGeometry(QtCore.QRect(10, 453, 60, 20))
+        self.cursor_pos.setText('(0,0)')
+        self.cursor_pos.setObjectName("cursor_pos")
+        
+        self.cursor_value = QtWidgets.QLabel(self.z_slider_box)
+        self.cursor_value.setGeometry(QtCore.QRect(10, 468, 60, 20))
+        self.cursor_value.setFont(font)
+        self.cursor_value.setText("0")
+        self.cursor_value.setObjectName("cursor_value")
         
         
         

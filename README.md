@@ -48,8 +48,8 @@ As of December 2023, we confirmed its functionality in Windows10 (x64) with belo
 - cupy-cuda12x: 12.3.0 (for CUDA 12)
 
 - micro-manager-2.0.0
-- pymmcore: 10.1.1.70.6 
-(pymmcore not the latest but is compatible with currently available Hamamatsu API, which requires Device API version 70 and Module API version 10)
+- pymmcore: 10.1.1.70.6
+(not the latest but is compatible with currently available Hamamatsu API, which requires Device API v70 and Module API v10)
 
 
 Note that nVidia GPU board, CUDA toolkit and CuPy are only necessary for speeding up the computation time for the autofocusing feature. We still have CPU-based codes in auto_focusing.py

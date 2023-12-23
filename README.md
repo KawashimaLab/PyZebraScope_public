@@ -36,16 +36,16 @@ The below Python packages are required to run PyZebrascope:
 
 As of December 2023, we confirmed its functionality in Windows10 (x64) with below Python packages
 
-conda 23.11.0 
-Python 3.11.5
-numpy 1.26.2
-spyder 5.4.3
-PyQt5: 5.15.10
-pyqtgraph: 0.13.3
-nidaqmx: 0.9.0
-h5py: 3.9.0
-pyserial: 3.5
-cupy-cuda12x: 12.3.0 (for CUDA 12)
+- conda 23.11.0
+- Python 3.11.5
+- numpy 1.26.2
+- spyder 5.4.3
+- PyQt5 5.15.10
+- pyqtgraph 0.13.3
+- nidaqmx 0.9.0
+- h5py 3.9.0
+- pyserial 3.5
+- cupy-cuda12x: 12.3.0 (for CUDA 12)
 
 micro-manager-2.0.0
 pymmcore: 10.1.1.70.6 

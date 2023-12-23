@@ -47,8 +47,8 @@ As of December 2023, we confirmed its functionality in Windows10 (x64) with belo
 - pyserial 3.5
 - cupy-cuda12x: 12.3.0 (for CUDA 12)
 
-micro-manager-2.0.0
-pymmcore: 10.1.1.70.6 
+- micro-manager-2.0.0
+- pymmcore: 10.1.1.70.6 
 (this is not the latest but is compatible with currently available Hamamatsu API, which requires Device API version 70 and Module API version 10)
 
 

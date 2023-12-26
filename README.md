@@ -36,7 +36,7 @@ The below Python packages are required to run PyZebrascope:
 
 Note that nVidia GPU board, CUDA toolkit and CuPy are only necessary for speeding up the computation time for the autofocusing feature. We still have CPU-based codes in auto_focusing.py
 
-As of December 2023, we confirmed its functionality in Windows10 (x64) with below Python packages
+As of December 2023, we confirmed its functionality in Windows10 (x64) with Anaconda 2023.09 which include below Python packages
 
 - conda 23.11.0
 - Python 3.11.5
